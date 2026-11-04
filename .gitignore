@@ -1,0 +1,14 @@
+# Raw downloads from the Urban Institute Education Data Portal, the SEDA
+# county file and the Census cartographic boundary files are re-created by
+# run_all.do and are not redistributed (see README, Data protection).
+data/raw/*
+!data/raw/.gitkeep
+
+# Validation file that carries SEDA estimates (SEDA data use agreement)
+data/derived/seda_validation_cells.dta
+data/derived/seda_validation_counties.dta
+
+# Stata and macOS clutter
+*.gph
+.DS_Store
+/run_all.log
