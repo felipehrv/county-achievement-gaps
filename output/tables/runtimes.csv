@@ -1,0 +1,17 @@
+step,seconds
+01_edfacts,401.135
+01_ccd_directory,358.531
+01_ccd_enrollment,80.65300000000001
+01_saipe,47.617
+01_download,887.946
+02_build_master,.098
+03_hetop_fits,58.701
+03_hetop_cells,1065
+03_estimate_gaps,59.084
+04_seda_download,13.126
+04_within_state_hetop,10.688
+04_within_state_fits,54
+04_validate_seda,23.992
+05_figures_tables,4.517
+docs,.174
+total,975.814

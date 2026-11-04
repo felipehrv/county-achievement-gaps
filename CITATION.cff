@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this code or these estimates, please cite the repository as below, and cite the data sources named in the README."
+type: software
+title: "County achievement gaps: White-Black mathematics gaps from EDFacts proficiency counts with heteroskedastic ordered probit models (Stata and Mata)"
+authors:
+  - family-names: "Rodríguez Villalta"
+    given-names: "Felipe Hernán"
+    affiliation: "Stanford University"
+version: "1.0.0"
+date-released: "2026-11-03"
+url: "https://github.com/felipehrv/county-achievement-gaps"
+repository-code: "https://github.com/felipehrv/county-achievement-gaps"
+license: MIT
+keywords:
+  - achievement gaps
+  - HETOP
+  - EDFacts
+  - SEDA
+  - Stata
+  - Mata
+  - education data
+abstract: "A reproducible Stata and Mata pipeline that estimates county-level White-Black mathematics achievement gaps for grades 4, 6 and 8 in school year 2018-19 from the proficiency rates that districts report to EDFacts, published through the Urban Institute Education Data Portal, with covariates from the Common Core of Data and SAIPE. Gaps are recovered with heteroskedastic ordered probit models, pooled across grades with precision weights, related to county child poverty and school-district structure, and validated against the Stanford Education Data Archive."

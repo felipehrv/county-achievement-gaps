@@ -1,0 +1,5 @@
+variable,counties_imputed,sample_mean_used
+poverty_rate,0,.2752136076300078
+share_black,0,.4520424209469956
+seg_bw_index,0,.0824729054569187
+district_fragmentation,0,.5309059110552958

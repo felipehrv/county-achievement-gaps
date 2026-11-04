@@ -1,0 +1,316 @@
+<<dd_include: code/doc_header.html>>
+<title>County achievement gaps</title>
+<meta name="description" content="White-Black mathematics achievement gaps for counties in six Southern states, school year 2018-19, recovered from EDFacts proficiency counts with heteroskedastic ordered probit models and validated against the Stanford Education Data Archive.">
+</head>
+<body>
+<<dd_do: quietly>>
+/*------------------------------------------------------------------------------
+    brief.html
+    Source of the brief (dyntext). The prose is fixed; every number is read
+    from the files the pipeline wrote, so the page describes the run that
+    produced it.
+
+    Inputs       : data/derived (county-level files), output/tables
+                   (summary files and HTML tables), docs/figures
+    Outputs      : docs/index.html (written by run_all.do)
+    Dependencies : Stata 17 or later with dyntext; the pipeline must have run
+    Author       : Felipe Hernán Rodríguez Villalta
+    Year         : 2026
+------------------------------------------------------------------------------*/
+
+* Sample and gaps
+use "${derived}/proficiency_counts.dta", clear
+quietly levelsof county_fips, local(cl)
+global B_counties_sample : word count `cl'
+quietly summarize n_tested if subgroup == 3
+global B_black_tested = r(sum)
+quietly summarize n_tested if subgroup == 2
+global B_white_tested = r(sum)
+quietly bysort county_fips: egen byte _allc = min(cell_complete)
+quietly bysort county_fips: keep if _n == 1
+quietly count if _allc == 1
+global B_counties_complete = r(N)
+
+* Counties in the study states, from the Census boundary file
+use "${derived}/county_names.dta", clear
+gen byte _in = 0
+foreach s in $STATES {
+    quietly replace _in = 1 if fips == real("`s'")
+}
+quietly count if _in == 1
+global B_counties_total = r(N)
+
+use "${derived}/gaps_cell_level.dta", clear
+global B_cells = _N
+
+use "${derived}/gaps_county_level.dta", clear
+merge 1:1 county_fips using "${derived}/county_names.dta", keep(master match) nogen
+global B_counties = _N
+quietly summarize gap_wb_pooled, detail
+global B_gap_median = r(p50)
+global B_gap_p10 = r(p10)
+global B_gap_p90 = r(p90)
+global B_gap_min = r(min)
+global B_gap_max = r(max)
+gen double _lo = gap_wb_pooled - 1.96 * gap_wb_pooled_se
+quietly count if _lo > 0
+global B_counties_positive = r(N)
+gen double _lo_direct = gap_wb_pooled - 1.96 * gap_wb_pooled_se_direct
+quietly count if _lo_direct > 0
+global B_counties_positive_direct = r(N)
+global B_no_white = ${B_counties_sample} - ${B_counties}
+* The ten counties with the most test takers: how many lie above the median gap
+quietly summarize gap_wb_pooled, detail
+local med = r(p50)
+gen double _tested = n_black_mean + n_white_mean
+gsort -_tested
+quietly count if gap_wb_pooled > `med' in 1/10
+global B_large_above_median = r(N)
+gen double _w = 2 * 1.96 * gap_wb_pooled_se
+quietly summarize _w, detail
+global B_ci_width_median = r(p50)
+quietly count if n_districts == 1
+global B_single_district = r(N)
+quietly summarize gap_wb_pooled if n_districts == 1
+global B_gap_single = r(mean)
+quietly summarize gap_wb_pooled if n_districts > 1
+global B_gap_multi = r(mean)
+gsort -gap_wb_pooled
+forvalues k = 1/4 {
+    local sn : label (fips) `=fips[`k']'
+    global B_top`k'_name "`=county_name[`k']' (`sn')"
+    global B_top`k'_gap = gap_wb_pooled[`k']
+}
+gsort gap_wb_pooled
+forvalues k = 1/3 {
+    local sn : label (fips) `=fips[`k']'
+    global B_low`k'_name "`=county_name[`k']' (`sn')"
+    global B_low`k'_gap = gap_wb_pooled[`k']
+}
+
+* Pooling and ladder
+import delimited using "${tables}/pooling_summary.csv", clear varnames(1) stringcols(1) encoding(utf-8)
+forvalues i = 1/`=_N' {
+    global B_pool_`=statistic[`i']' = value[`i']
+}
+import delimited using "${tables}/ladder_coefficients.csv", clear varnames(1) stringcols(2) encoding(utf-8)
+forvalues i = 1/`=_N' {
+    global B_b`=model[`i']'_`=variable[`i']' = b[`i']
+    global B_se`=model[`i']'_`=variable[`i']' = se[`i']
+    global B_r2a_m`=model[`i']' = r2_a[`i']
+    global B_r2_m`=model[`i']' = r2[`i']
+}
+global B_frag_double = ${B_b4_district_fragmentation} * ln(2)
+global B_pov_t = ${B_b1_poverty_rate} / ${B_se1_poverty_rate}
+use "${derived}/gaps_county_level.dta", clear
+quietly summarize poverty_rate
+global B_pov_drop = abs(${B_b1_poverty_rate}) * (r(max) - r(min))
+
+* Direct estimator check
+import delimited using "${tables}/se_comparison.csv", clear varnames(1) stringcols(1) encoding(utf-8)
+forvalues i = 1/`=_N' {
+    global B_sec_`=statistic[`i']' = value[`i']
+}
+
+* Exclusions: the district cell-size rule, then the county rule
+use "${tables}/exclusions_district_cells.dta", clear
+quietly summarize students if subgroup == 3 & excl_reason == 0
+global B_black_kept = r(sum)
+quietly summarize students if subgroup == 3 & excl_reason == 3
+global B_black_small = r(sum)
+global B_black_small_pct = 100 * ${B_black_small} / (${B_black_kept} + ${B_black_small})
+global B_black_county_rule_pct = 100 * (${B_black_kept} - ${B_black_tested}) / ${B_black_kept}
+quietly summarize rows if excl_reason == 1
+global B_rows_suppressed = r(sum)
+
+* SEDA
+foreach g in r_mean rho_mean n_mean r_gap rho_gap n_gap r_pooled rho_pooled n_pooled {
+    global B_seda_`g' .
+}
+capture confirm file "${tables}/seda_validation_correlations.csv"
+if !_rc {
+    import delimited using "${tables}/seda_validation_correlations.csv", clear varnames(1) stringcols(1 3) encoding(utf-8)
+    quietly keep if state == "All states"
+    forvalues i = 1/`=_N' {
+        if measure[`i'] == "mean_all" {
+            global B_seda_r_mean = pearson[`i']
+            global B_seda_rho_mean = spearman[`i']
+            global B_seda_n_mean = cells[`i']
+        }
+        if measure[`i'] == "gap" {
+            global B_seda_r_gap = pearson[`i']
+            global B_seda_rho_gap = spearman[`i']
+            global B_seda_n_gap = cells[`i']
+        }
+        if measure[`i'] == "gap_pooled_county" {
+            global B_seda_r_pooled = pearson[`i']
+            global B_seda_rho_pooled = spearman[`i']
+            global B_seda_n_pooled = cells[`i']
+        }
+    }
+}
+
+* Running times
+foreach g in 01_download 03_hetop_fits 03_hetop_cells {
+    global B_t_`g' .
+}
+capture confirm file "${tables}/runtimes.csv"
+if !_rc {
+    import delimited using "${tables}/runtimes.csv", clear varnames(1) stringcols(1) encoding(utf-8)
+    forvalues i = 1/`=_N' {
+        global B_t_`=step[`i']' = seconds[`i']
+    }
+}
+global B_n_states : word count ${STATES}
+
+* Sentences that depend on timings recorded in this session
+global B_s_download "The download time is recorded in output/tables/runtimes.csv."
+if ${B_t_01_download} < . global B_s_download "The download took `: display %4.1f ${B_t_01_download} / 60' minutes."
+global B_s_fits "`: display %5.0fc ${B_counties_sample} * 3' county-grade cells."
+if ${B_t_03_hetop_fits} < . & ${B_t_03_hetop_cells} < . global B_s_fits "`: display %5.0fc ${B_t_03_hetop_cells}' county-grade cells in `: display %3.0f ${B_t_03_hetop_fits}' seconds."
+<</dd_do>>
+
+<nav class="top" aria-label="Sections">
+<div class="wrap">
+<span class="brand">County achievement gaps</span>
+<div class="links">
+<a href="#problem">The problem</a>
+<a href="#counties">The counties</a>
+<a href="#context">Context</a>
+<a href="#validation">Validation</a>
+<a href="#supports">What it supports</a>
+<a href="#methods">Methods</a>
+<a href="replication.html">Manual</a>
+<a href="https://github.com/felipehrv/county-achievement-gaps">Code</a>
+</div>
+</div>
+</nav>
+
+<header class="mast wrap">
+<div class="kicker">A brief of the research · Six Southern states, school year 2018-19</div>
+<h1>County achievement gaps recovered from proficiency counts</h1>
+<p class="deck">Districts report how many students took the state test and what share met the standard, and every state sets its own test. This page recovers from that thin record the gap between White and Black students' average mathematics achievement in <<dd_display: ${B_counties}>> counties, and checks the result against an independent archive.</p>
+<div class="byline">By <b>Felipe Hernán Rodríguez Villalta</b>, 2026 · EDFacts, Common Core of Data and SAIPE through the Urban Institute Education Data Portal · Stata and Mata; validated against SEDA 6.0</div>
+</header>
+
+<main class="wrap">
+
+<div class="prose">
+<p><span class="lead">The federal record of state testing is public, complete and coarse. For every district, grade and student group, EDFacts publishes the number of students tested and the share who scored at or above the state's proficient standard, in ranges when the group is small. It publishes no scores, and each state tests with its own instrument against its own standard.</span> A difference of ten percentage points in proficiency means one thing in a state with a demanding standard and another in a state with a lenient one, and the same difference means different things at the top and at the bottom of the distribution (Ho 2008).</p>
+<p>This page reports what can nonetheless be learned from that record about the gap between White and Black students in mathematics, for the counties of Alabama, Georgia, Louisiana, Mississippi, North Carolina and South Carolina in school year 2018-19. The gaps are expressed in standard deviation units of student achievement, a metric that does not depend on the state's test or standard, so they can be placed side by side across states. The page describes differences in measured achievement between groups of children who go to school in very different conditions. It does not attribute those differences to the children, and it does not identify their causes.</p>
+</div>
+
+<div class="tiles">
+<div class="tile"><div class="v"><<dd_display: ${B_counties}>></div><div class="l">counties with an estimate</div><div class="d">of <<dd_display: ${B_counties_sample}>> with a district of at least <<dd_display: ${MIN_CELL_N}>> Black test takers in grades 4, 6 and 8</div></div>
+<div class="tile"><div class="v"><<dd_display: %9.0fc ${B_black_tested}>></div><div class="l">Black students tested</div><div class="d">and <<dd_display: %9.0fc ${B_white_tested}>> White students in the <<dd_display: ${B_counties_sample}>> sample counties, three grades together</div></div>
+<div class="tile"><div class="v"><<dd_display: %4.2f ${B_pool_grand_gap_grade6}>></div><div class="l">standard deviations, pooled gap</div><div class="d">median county <<dd_display: %4.2f ${B_gap_median}>>; <<dd_display: ${B_counties_positive}>> of <<dd_display: ${B_counties}>> HETOP intervals above zero</div></div>
+<div class="tile"><div class="v"><<dd_display: %4.2f ${B_seda_r_mean}>></div><div class="l">correlation with SEDA</div><div class="d">county means, <<dd_display: %5.0fc ${B_seda_n_mean}>> county-grade cells, within states</div></div>
+</div>
+
+<h2 class="chap" id="problem"><small>Chapter 1</small>Counts by category, not scores</h2>
+<div class="prose">
+<p>States report test results to the federal government as counts of students in ordered performance categories. The categories carry real information about where a group's scores lie, but the information is coarsened: a student at the bottom of "proficient" and one at the top are the same student in the count. Ho and Reardon (2012) showed how to estimate the gap between two groups from such counts, and Reardon, Shear, Castellano and Ho (2017) how to recover each group's mean and standard deviation. Their model, a heteroskedastic ordered probit, treats the categories as cuts through a continuous distribution and estimates where each group's distribution sits relative to cut scores shared by the groups in the fit, here the three groups of a county and grade.</p>
+<p>The public files add a second coarsening. They publish one cut, the proficient standard, not the full set of categories. The pipeline behind this page therefore reconstructs four categories from each group's proficiency rate under two stated assumptions: scores within a group are normally distributed with the same spread in every group, and the state's cut scores sit at fixed positions around the proficient standard. The assumptions fix the spread; what the data identify is where each group sits relative to the standard, and so the distance between groups. The gap is summarized as Ho's (2009) V, which is unchanged by any increasing transformation of a state's scale and which, under the normality assumed here, equals the difference in means divided by the pooled standard deviation.</p>
+<p>The gap is estimated for every county and grade, then the three grades of a county are pooled into one estimate with weights that favor the more precise grades, following the meta-analytic model of Hedges and Vevea (1998). District cells with fewer than <<dd_display: ${MIN_CELL_N}>> tested students are set aside before aggregation, because the published rates for small groups are too coarse; this rule excludes <<dd_display: %3.1f ${B_black_small_pct}>>% of the Black students tested in the six states. Counties then enter only when at least <<dd_display: ${MIN_CELL_N}>> Black students were tested in each grade, which keeps <<dd_display: ${B_counties_sample}>> of the <<dd_display: ${B_counties_total}>> counties and a further <<dd_display: %3.1f ${B_black_county_rule_pct}>>% of the remaining Black test takers outside the sample. In <<dd_display: ${B_no_white}>> of those counties no district had <<dd_display: ${MIN_CELL_N}>> White test takers in any grade, so a gap is estimated for <<dd_display: ${B_counties}>> counties.</p>
+</div>
+
+<h2 class="chap" id="counties"><small>Chapter 2</small>What the counties show</h2>
+<div class="prose">
+<p>In every one of the <<dd_display: ${B_counties}>> counties, White students' average exceeds Black students' average. The HETOP interval lies above zero in <<dd_display: ${B_counties_positive}>> counties and the wider binomial interval in <<dd_display: ${B_counties_positive_direct}>>. The pooled gap across counties is <<dd_display: %4.2f ${B_pool_grand_gap_grade6}>> standard deviations. The median county has a gap of <<dd_display: %4.2f ${B_gap_median}>>, and the middle 80% of counties lie between <<dd_display: %4.2f ${B_gap_p10}>> and <<dd_display: %4.2f ${B_gap_p90}>>. For scale, a gap of 0.8 standard deviations means that the median Black student scores near the 21st percentile of White students in the same county.</p>
+<p>The four largest gaps are in <<dd_display: "${B_top1_name}">> at <<dd_display: %4.2f ${B_top1_gap}>>, <<dd_display: "${B_top2_name}">> at <<dd_display: %4.2f ${B_top2_gap}>>, <<dd_display: "${B_top3_name}">> at <<dd_display: %4.2f ${B_top3_gap}>> and <<dd_display: "${B_top4_name}">> at <<dd_display: %4.2f ${B_top4_gap}>>; the three smallest in <<dd_display: "${B_low1_name}">> at <<dd_display: %4.2f ${B_low1_gap}>>, <<dd_display: "${B_low2_name}">> at <<dd_display: %4.2f ${B_low2_gap}>> and <<dd_display: "${B_low3_name}">> at <<dd_display: %4.2f ${B_low3_gap}>>. The largest gaps are in the largest metropolitan counties of their states: among the ten counties with the most test takers, <<dd_display: ${B_large_above_median}>> have gaps above the median county. The smallest gaps occur in counties of every size. The gap changes little across grades: the pooling model's slope on grade is <<dd_display: %6.3f ${B_pool_grade_slope}>> standard deviations per grade.</p>
+</div>
+
+<figure class="chart card" id="fig-gaps">
+<h3>White students' average exceeds Black students' average in every county, by <<dd_display: %3.1f ${B_gap_min}>> to <<dd_display: %3.1f ${B_gap_max}>> standard deviations</h3>
+<img src="figures/figure1_county_gaps.svg" alt="Dot plot of the White-Black gap for every county, ordered from smallest to largest, with 95 percent intervals and a line at the pooled estimate">
+<figcaption><b>Figure 1.</b> Pooled White-Black mathematics gap (V) for each county, grades 4, 6 and 8 together, ordered from smallest to largest; colors identify states. Thick bars are 95% intervals from the HETOP standard errors; thin bars extend them to intervals from the binomial standard errors of the published rates, which are about <<dd_display: %3.0f 100 * (${B_sec_se_ratio_p50} - 1)>>% wider. The horizontal line is the pooled estimate of the random-intercept model at grade 6. Source: this pipeline, from EDFacts via the Education Data Portal.</figcaption>
+<details class="tbl"><summary>Show the table</summary><div class="scroller">
+<<dd_include: output/tables/county_gaps.html>>
+</div></details>
+</figure>
+
+<figure class="chart card" id="fig-map">
+<h3>Estimates exist for <<dd_display: ${B_counties}>> counties; gray counties have no estimate</h3>
+<img src="figures/figure2_county_map.svg" alt="Map of Alabama, Georgia, Louisiana, Mississippi, North Carolina and South Carolina with counties shaded by the size of the pooled gap in five classes">
+<figcaption><b>Figure 2.</b> Counties shaded by the pooled gap in quintiles. Gray counties have no estimate: <<dd_display: ${B_counties_total} - ${B_counties_sample}>> had no district with at least <<dd_display: ${MIN_CELL_N}>> Black test takers in some grade, and <<dd_display: ${B_no_white}>> met that rule but had no district with <<dd_display: ${MIN_CELL_N}>> White test takers in any grade; no value is shown for them. Boundaries: Census Bureau cartographic boundary file, 2018. Source: this pipeline.</figcaption>
+</figure>
+
+<h2 class="chap" id="context"><small>Chapter 3</small>Gaps and the conditions around them</h2>
+<div class="prose">
+<p>Racial achievement gaps are closely associated with racial differences in family resources, in the poverty of the schools students attend and in segregation (Reardon, Kalogrides and Shores 2019); income gaps show the same pattern (Reardon 2011). Two county characteristics available for every county are used here to place the gaps in context: the child poverty rate of the county, from the Census Bureau's small area estimates, and the structure of its school districts.</p>
+<p>Across these counties the child poverty rate is at most weakly associated with the size of the gap. The slope of the gap on the poverty rate is <<dd_display: %5.2f ${B_b1_poverty_rate}>> standard deviations per unit of the rate (robust standard error <<dd_display: %4.2f ${B_se1_poverty_rate}>>), distinguishable from zero only at the 10% level; across the observed range of poverty rates the fitted line in Figure 3 falls by about <<dd_display: %4.2f ${B_pov_drop}>> standard deviations, and the rate accounts for <<dd_display: %3.0f 100 * ${B_r2_m1}>>% of the precision-weighted variation in county gaps. Counties with high child poverty rates have gaps as large or as small as counties with low rates. The structure of districts is more closely associated with the gap. Counties with more school districts have larger gaps: <<dd_display: %4.2f ${B_b4_district_fragmentation}>> standard deviations per log unit (standard error <<dd_display: %4.2f ${B_se4_district_fragmentation}>>), or about <<dd_display: %4.2f ${B_frag_double}>> for a doubling of the number of districts, with poverty, the Black share of enrollment and the unevenness of that share across districts held constant. Together the four characteristics account for <<dd_display: %3.0f 100 * ${B_r2_m4}>>% of the variation in county gaps.</p>
+<p>The count of districts admits more than one reading, and these data do not distinguish between them. In these states a county with several districts may be a county system beside one or more city systems, or, in North Carolina and Louisiana especially, a county whose charter schools are each counted as a district in the federal directory; the count therefore mixes institutional fragmentation with metropolitan size. Larger racial segregation between schools is associated with larger gaps (Reardon 2016; Reardon, Weathers, Fahle, Jang and Kalogrides 2024), but these data cannot say whether the larger gaps of metropolitan counties reflect more advantaged White students, more segregated schools, or both. The measure of how unevenly Black students are spread across a county's districts adds nothing once the number of districts is in the model, and it is zero by construction in the <<dd_display: ${B_single_district}>> single-district counties, where sorting happens between schools inside the district and is invisible in a district-level file.</p>
+</div>
+
+<figure class="chart card" id="fig-poverty">
+<h3>Child poverty is at most weakly associated with the size of the gap across these counties</h3>
+<img src="figures/figure3_gap_poverty.svg" alt="Scatter plot of the pooled gap against the county child poverty rate, with marker area proportional to precision and a nearly flat weighted fitted line">
+<figcaption><b>Figure 3.</b> Pooled White-Black gap against the SAIPE child poverty rate (ages 5 to 17), one circle per county, circle area proportional to the precision of the estimate, colors by state. The line is the precision-weighted fit; its slope is distinguishable from zero only at the 10% level. Source: this pipeline; SAIPE via the Education Data Portal.</figcaption>
+<details class="tbl"><summary>Show the regression table</summary><div class="scroller">
+<<dd_include: output/tables/table2_gap_regression.html>>
+</div></details>
+</figure>
+
+<h2 class="chap" id="validation"><small>Chapter 4</small>How the estimates are checked</h2>
+<div class="prose">
+<p>The Stanford Education Data Archive (SEDA) estimates county means and gaps from the same federal collection, with the full set of performance categories, a different model specification and a link to the national NAEP scale. Its sixth release covers school year 2018-19 and provides an independent set of estimates against which this pipeline's can be judged. Levels cannot be compared: SEDA's scale is national, while this pipeline's gaps are in within-county standard deviation units and its validation means are standardized within each state and grade. Within a state and grade, however, SEDA's values are a linear transformation of the state-standardized ones, so the ordering of counties and the linear association can be compared, through correlations computed within states.</p>
+<p>For county means of all students the correlation is <<dd_display: %4.2f ${B_seda_r_mean}>> (Pearson) and <<dd_display: %4.2f ${B_seda_rho_mean}>> (Spearman) over <<dd_display: %5.0fc ${B_seda_n_mean}>> county-grade cells. For the White-Black gap, which is a difference of two noisier quantities, the correlation is <<dd_display: %4.2f ${B_seda_r_gap}>> and <<dd_display: %4.2f ${B_seda_rho_gap}>> over <<dd_display: %5.0fc ${B_seda_n_gap}>> cells, and <<dd_display: %4.2f ${B_seda_r_pooled}>> for the pooled county gaps against SEDA's grade-averaged gaps over <<dd_display: ${B_seda_n_pooled}>> counties. A second check is internal: the gap can be computed directly as the difference between the probits of the two groups' proficiency rates, with a standard error from the binomial variance of each rate. The two estimates agree to a correlation of <<dd_display: %6.4f ${B_sec_correlation_v_direct}>>, but the binomial standard error is <<dd_display: %4.2f ${B_sec_se_ratio_p50}>> times the HETOP standard error at the median, because the model's standard errors treat the reconstructed categories as observed. Both intervals are reported.</p>
+</div>
+
+<figure class="chart card" id="fig-seda">
+<h3>County means agree closely with SEDA; gaps agree less closely, as differences of noisy quantities do</h3>
+<img src="figures/figure4_seda_validation.png" alt="Two scatter plots of pipeline estimates against SEDA estimates, standardized within state and grade: county means on the left, White-Black gaps on the right">
+<figcaption><b>Figure 4.</b> Pipeline estimates against SEDA 6.0 estimates for the same counties, grades and school year, both standardized within state and grade so that scale differences drop out; colors identify states as in Figure 1. Left: county means for all students. Right: White-Black gaps. Source: this pipeline; Stanford Education Data Archive, version 6.0.</figcaption>
+<details class="tbl"><summary>Show the correlations by state</summary><div class="scroller">
+<<dd_include: output/tables/seda_correlations.html>>
+</div></details>
+</figure>
+
+<h2 class="chap" id="supports"><small>Chapter 5</small>What the evidence supports, and what it does not</h2>
+<div class="prose">
+<ul>
+<li>In school year 2018-19, the average mathematics score of White students exceeded that of Black students in every one of the <<dd_display: ${B_counties}>> counties, by <<dd_display: %4.2f ${B_gap_min}>> to <<dd_display: %4.2f ${B_gap_max}>> standard deviations, with a pooled estimate of <<dd_display: %4.2f ${B_pool_grand_gap_grade6}>>.</li>
+<li>The size of the gap varies across counties far more than the uncertainty of any single estimate: the typical 95% interval is <<dd_display: %4.2f ${B_ci_width_median}>> standard deviations wide, while the spread between the 10th and 90th percentile county is <<dd_display: %4.2f ${B_gap_p90} - ${B_gap_p10}>>.</li>
+<li>Within these states the county poverty rate is at most weakly associated with the size of the gap; the number of school districts is more closely associated with it. Both associations are descriptive and admit more than one reading.</li>
+<li>The estimates order counties the way SEDA does, with correlations near <<dd_display: %4.2f ${B_seda_r_mean}>> for means and <<dd_display: %4.2f ${B_seda_r_gap}>> for gaps.</li>
+</ul>
+<p>The sample is the counties with a district of at least <<dd_display: ${MIN_CELL_N}>> Black test takers in every grade, in six states where most districts are county systems (<<dd_display: ${B_single_district}>> of the <<dd_display: ${B_counties}>> counties have a single district). It excludes the <<dd_display: ${B_counties_total} - ${B_counties_sample}>> counties with no district of that size in some grade, and the <<dd_display: ${B_no_white}>> sample counties with no White cell of that size have no gap estimate; the pattern of association may differ in states with fragmented district systems. The estimates rest on one proficiency cut per group and on the stated assumptions about the shape of the score distribution; the HETOP intervals shown are narrower than the information in the published rates warrants, and the pooled intervals do not carry the variation of a county's gap across grades. Nothing on this page identifies a cause: the gaps are differences in measured achievement between groups of children schooled under different conditions, not differences in the children.</p>
+</div>
+
+<div class="pull">The published record is coarse. Read with an appropriate model and checked against an independent set of estimates, it places every county on one scale, and in each of the <<dd_display: ${B_counties}>> counties the difference in measured mathematics achievement between White and Black students is large.</div>
+
+<h2 class="chap" id="methods"><small>About this page</small>Data, methods and protection</h2>
+<div class="methods">
+<h3>Methods in brief</h3>
+<dl>
+<dt>Data</dt><dd>EDFacts mathematics assessment results by district, grade and race (students tested and the midpoint of the published proficiency range), the Common Core of Data district directory and enrollment by race, and the Census Bureau's Small Area Income and Poverty Estimates for school districts, all for school year 2018-19 and all retrieved from the Urban Institute Education Data Portal with the <code>educationdata</code> Stata package. <<dd_display: "${B_s_download}">></dd>
+<dt>Sample</dt><dd>District-grade-subgroup cells with fewer than <<dd_display: ${MIN_CELL_N}>> tested students are excluded before aggregation (<<dd_display: %3.1f ${B_black_small_pct}>>% of Black test takers); cells suppressed by the Department of Education (<<dd_display: ${B_rows_suppressed}>> rows, all small) are dropped and never reconstructed. A county enters when it has a Black cell of at least <<dd_display: ${MIN_CELL_N}>> tested students in every grade: <<dd_display: ${B_counties_sample}>> counties, of which <<dd_display: ${B_counties}>> have a White cell of that size in at least one grade, and so a gap estimate, and <<dd_display: ${B_counties_complete}>> in all three grades.</dd>
+<dt>Estimation</dt><dd>Heteroskedastic ordered probit (Reardon, Shear, Castellano and Ho 2017) with the <code>hetop</code> command, one fit per county and grade with three groups (all students, White, Black) and four categories reconstructed from the proficiency rate; <<dd_display: "${B_s_fits}">> Gap V (Ho 2009) and its delta-method standard error for every cell in one Mata operation; the companion command <code>gapci</code> does the same for one pair of groups.</dd>
+<dt>Pooling and models</dt><dd>Grade gaps pooled per county with a precision-weighted random-intercept model (Hedges and Vevea 1998), evaluated at grade <<dd_display: ${B_pool_reference_grade}>>. Four nested precision-weighted regressions of the pooled gap on child poverty, log number of districts, Black share of enrollment and between-district dispersion of that share, with robust standard errors.</dd>
+<dt>Validation</dt><dd>Within-state HETOP refit across counties for each state, grade and group, correlated with SEDA 6.0 county means and White-Black gaps (cohort-standardized scale) after standardization within state and grade; and the direct probit-difference estimator with binomial standard errors as an internal check.</dd>
+<dt>Protection</dt><dd>All sources are public and aggregated. Suppressed cells are never filled in or recovered by subtraction; no estimate on this page or in the tables rests on a cell with fewer than <<dd_display: ${MIN_CELL_N}>> tested students; subgroup estimates appear at the county level only; the raw downloads and the SEDA file are not redistributed, and the validation figure is published as an image without the underlying values. The repository's README and manual state these rules and account for every excluded cell.</dd>
+<dt>Sources behind the figures</dt><dd>U.S. Department of Education, EDFacts; National Center for Education Statistics, Common Core of Data; U.S. Census Bureau, SAIPE; all via the Education Data Portal (Urban Institute), under the ODC Attribution License. Reardon, Ho, Shear, Fahle, saliba and Kalogrides (2025), Stanford Education Data Archive, version 6.0. Census Bureau cartographic boundary files, 2018.</dd>
+</dl>
+</div>
+
+<div class="methods">
+<h3>Materials</h3>
+<div class="files">
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps"><code>county-achievement-gaps</code></a><div>The repository: Stata and Mata code, derived county files, tables, figures and logs</div></div>
+<div class="f"><a href="replication.html"><code>replication.html</code></a><div>Replication manual, generated from the same run, step by step</div></div>
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps/blob/main/run_all.do"><code>run_all.do</code></a><div>Scope and paths; two globals move the analysis to other states or years</div></div>
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps/blob/main/code/ado/gapci.ado"><code>gapci.ado</code></a><div>The companion command: V and its interval from HETOP estimates</div></div>
+</div>
+</div>
+
+<div class="cite">To cite this page: Rodríguez Villalta, F. H. (2026). County achievement gaps recovered from proficiency counts: White-Black mathematics gaps in six Southern states, 2018-19. Brief of the research, github.com/felipehrv/county-achievement-gaps.</div>
+
+<div class="prose" style="font-family:var(--sans); font-size:.86rem; color:var(--muted)">
+<p>References. Hedges, L. V., and J. L. Vevea (1998), Psychological Methods 3(4). Ho, A. D. (2008), Educational Researcher 37(6). Ho, A. D. (2009), Journal of Educational and Behavioral Statistics 34(2). Ho, A. D., and S. F. Reardon (2012), Journal of Educational and Behavioral Statistics 37(4). Reardon, S. F. (2011), in Duncan and Murnane, eds., Whither Opportunity? Reardon, S. F. (2016), RSF 2(5). Reardon, S. F., D. Kalogrides and K. Shores (2019), American Journal of Sociology 124(4). Reardon, S. F., B. R. Shear, K. E. Castellano and A. D. Ho (2017), Journal of Educational and Behavioral Statistics 42(1). Reardon, S. F., E. S. Weathers, E. M. Fahle, H. Jang and D. Kalogrides (2024), American Sociological Review 89(6). Full references with identifiers are in the repository README.</p>
+</div>
+
+</main>
+
+<footer><div class="wrap">Felipe Hernán Rodríguez Villalta · 2026 · Every number on this page is a county aggregate of cells with at least <<dd_display: ${MIN_CELL_N}>> tested students. No suppressed cell is reported or reconstructed, and the raw files and the SEDA data are not redistributed.</div></footer>
+</body>
+</html>

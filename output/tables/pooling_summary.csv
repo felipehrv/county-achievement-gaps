@@ -1,0 +1,14 @@
+statistic,value
+cells,901
+counties,307
+intercept,.7939468388058681
+grade_slope,-.0040446505079517
+reference_grade,6
+grand_gap_grade6,.7696789357581579
+grade_slope_se,.0027292166656409
+county_variance,.0342576871921461
+residual_variance,3.369040810776492
+nested_F,.0853191086550963
+nested_F_df,302
+nested_p,.7704150426788551
+ladder_counties,307

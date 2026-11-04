@@ -1,0 +1,1095 @@
+------------------------------------------------------------------------------------------------------------------------
+      name:  step01
+       log:  ./output/logs/01_download.log
+  log type:  text
+ opened on:   3 Nov 2026, 19:21:06
+
+. 
+. *------------------------------------------------------------------------------
+. * Why these four sources
+. *
+. * EDFacts gives the outcome: for every district, grade and subgroup, the
+. * number of students tested in mathematics and the share who scored at or
+. * above the state's proficient standard. The portal reports that share as a
+. * midpoint of the range EDFacts publishes; the range is wider for smaller
+. * groups, which is why small cells are dropped in step 02.
+. *
+. * The CCD directory assigns every district to a county, the unit of analysis.
+. * CCD enrollment by race gives the Black share of enrollment for each
+. * district, from which step 02 builds the county composition and the
+. * between-district dispersion measure. SAIPE gives the child poverty rate of
+. * each district, aggregated to counties in step 02.
+. *
+. * The portal republishes the federal files without authentication and codes
+. * missing, not applicable and suppressed values as -1, -2 and -3. These codes
+. * are kept as they arrive here; step 02 recodes them to missing in every
+. * source and, for EDFacts, counts them so that the suppression applied by the
+. * Department of Education can be documented.
+. *------------------------------------------------------------------------------
+. 
+. display as result _n "Downloading from the Urban Institute Education Data Portal"
+
+Downloading from the Urban Institute Education Data Portal
+
+. display as result "   States: ${STATES}   Portal year: ${EDF_YEAR}   Grades: ${GRADES}"
+   States: 01 13 22 28 37 45   Portal year: 2018   Grades: 4 6 8
+
+. 
+. *------------------------------------------------------------------------------
+. * Raw files are reused (REUSE_RAW 1) only if they were downloaded for the
+. * same scope. The scope stamp written at the end of this script records the
+. * states, year and grades of the files in data/raw.
+. *------------------------------------------------------------------------------
+. local reuse = ${REUSE_RAW}
+
+. if `reuse' == 1 {
+.     local stamp_ok 0
+.     capture confirm file "${raw}/scope_stamp.txt"
+.     if !_rc {
+.         tempname sf
+.         file open `sf' using "${raw}/scope_stamp.txt", read text
+.         file read `sf' stamp
+.         file close `sf'
+.         if `"`stamp'"' == "STATES=${STATES}|YEAR=${EDF_YEAR}|GRADES=${GRADES}" local stamp_ok 1
+.     }
+.     if !`stamp_ok' {
+.         display as text "  Files in data/raw were downloaded for another scope or have no scope stamp; downloading aga
+> in."
+.         local reuse 0
+.     }
+. }
+
+. 
+. * Each endpoint is downloaded once per state (and per grade for EDFacts), the
+. * pieces are appended, and the result is saved as it arrives. A call that
+. * fails is retried twice after a pause, because the portal occasionally
+. * refuses a connection; if it still fails, the pipeline stops instead of
+. * continuing with an incomplete file.
+. capture program drop fetch_or_stop
+
+. program define fetch_or_stop
+  1.     args endpoint subopts
+  2.     local rc 1
+  3.     forvalues attempt = 1/3 {
+  4.         capture noisily educationdata using "`endpoint'", sub(`subopts') clear
+  5.         local rc = _rc
+  6.         if `rc' == 0 continue, break
+  7.         display as text "  attempt `attempt' failed (rc = `rc'); waiting 10 seconds before retrying"
+  8.         sleep 10000
+  9.     }
+ 10.     if `rc' {
+ 11.         display as error "Download failed for `endpoint' (`subopts') after 3 attempts, rc = `rc'"
+ 12.         display as error "Check the connection and the portal status, then run again."
+ 13.         exit 498
+ 14.     }
+ 15. end
+
+. 
+. *------------------------------------------------------------------------------
+. * 1A. EDFacts: mathematics proficiency by race, district level
+. *------------------------------------------------------------------------------
+. timer clear 11
+
+. timer on 11
+
+. 
+. capture confirm file "${raw}/edfacts_district_race.dta"
+
+. if _rc | `reuse' != 1 {
+.     tempfile acc
+.     local first 1
+.     foreach g in $GRADES {
+  2.         foreach st in $STATES {
+  3.             display as text _n "  EDFacts: grade `g', state FIPS `st'"
+  4.             fetch_or_stop "district edfacts assessments race" ///
+>                 "year=${EDF_YEAR} grade_edfacts=`g' fips=`st'"
+  5.             local keepvars leaid year fips grade_edfacts race                     ///
+>                            math_test_num_valid math_test_pct_prof_midpt          ///
+>                            math_test_pct_prof_low math_test_pct_prof_high
+  6.             capture confirm variable leaid_num
+  7.             if !_rc local keepvars `keepvars' leaid_num
+  8.             quietly keep `keepvars'
+  9.             if `first' {
+ 10.                 quietly save `acc', replace
+ 11.                 local first 0
+ 12.             }
+ 13.             else {
+ 14.                 append using `acc'
+ 15.                 quietly save `acc', replace
+ 16.             }
+ 17.         }
+ 18.     }
+
+  EDFacts: grade 4, state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=01, endpoint 1 of 1 (822 records)
+> .
+
+Data successfully loaded into Stata and ready to use.
+  EDFacts: grade 4, state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=13, endpoint 1 of 1 (1194 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 4, state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=22, endpoint 1 of 1 (759 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 4, state FIPS 28
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=28, endpoint 1 of 1 (738 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 4, state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=37, endpoint 1 of 1 (1574 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 4, state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-4/race/?fips=45, endpoint 1 of 1 (512 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=01, endpoint 1 of 1 (805 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=13, endpoint 1 of 1 (1199 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=22, endpoint 1 of 1 (792 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 28
+Please be patient - downloading data.
+ Error -603, Unable to open URL: file could not be opened
+            getresults():  3010  attempt to dereference NULL pointer
+            getvarinfo():     -  function returned error
+          getalltables():     -  function returned error
+            getalldata():     -  function returned error
+                 <istmt>:     -  function returned error
+  attempt 1 failed (rc = 3010); waiting 10 seconds before retrying
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=28, endpoint 1 of 1 (749 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=37, endpoint 1 of 1 (1561 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 6, state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-6/race/?fips=45, endpoint 1 of 1 (525 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=01, endpoint 1 of 1 (823 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=13, endpoint 1 of 1 (1163 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=22, endpoint 1 of 1 (760 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 28
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=28, endpoint 1 of 1 (718 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=37, endpoint 1 of 1 (1461 records
+> ).
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+
+  EDFacts: grade 8, state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/edfacts/assessments/2018/grade-8/race/?fips=45, endpoint 1 of 1 (520 records)
+> .
+
+Data successfully loaded into Stata and ready to use.(label leaid_numdf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label grade_edfactsdf already defined)
+(label racedf already defined)
+(label math_test_num_validdf already defined)
+(label math_test_pct_prof_midptdf already defined)
+(label math_test_pct_prof_highdf already defined)
+(label math_test_pct_prof_lowdf already defined)
+.     use `acc', clear
+.     compress
+  (0 bytes saved)
+.     save "${raw}/edfacts_district_race.dta", replace
+file ./data/raw/edfacts_district_race.dta saved
+. }
+
+. else {
+.     display as text "  Reusing data/raw/edfacts_district_race.dta"
+.     use "${raw}/edfacts_district_race.dta", clear
+. }
+
+. 
+. timer off 11
+
+. quietly timer list 11
+
+. display as result _n "EDFacts rows downloaded: " _N " (district x grade x race) in " ///
+>     %6.1f r(t11) " seconds"
+
+EDFacts rows downloaded: 16675 (district x grade x race) in  401.1 seconds
+
+. record_runtime "01_edfacts" `=r(t11)'
+
+. tabulate fips grade_edfacts
+
+  Federal Information |  Grade category (as reported in
+ Processing Standards |             EDFacts)
+           state code |         4          6          8 |     Total
+----------------------+---------------------------------+----------
+              Alabama |       822        805        823 |     2,450 
+              Georgia |     1,194      1,199      1,163 |     3,556 
+            Louisiana |       759        792        760 |     2,311 
+          Mississippi |       738        749        718 |     2,205 
+       North Carolina |     1,574      1,561      1,461 |     4,596 
+       South Carolina |       512        525        520 |     1,557 
+----------------------+---------------------------------+----------
+                Total |     5,599      5,631      5,445 |    16,675 
+
+. 
+. *------------------------------------------------------------------------------
+. * 1B. CCD district directory: county code and total enrollment
+. *------------------------------------------------------------------------------
+. timer clear 12
+
+. timer on 12
+
+. 
+. capture confirm file "${raw}/ccd_directory.dta"
+
+. if _rc | `reuse' != 1 {
+.     tempfile acc
+.     local first 1
+.     foreach st in $STATES {
+  2.         display as text _n "  CCD directory: state FIPS `st'"
+  3.         fetch_or_stop "district ccd directory" "year=${EDF_YEAR} fips=`st'"
+  4.         local keepvars leaid year fips lea_name county_code enrollment
+  5.         capture confirm variable leaid_num
+  6.         if !_rc local keepvars `keepvars' leaid_num
+  7.         quietly keep `keepvars'
+  8.         if `first' {
+  9.             quietly save `acc', replace
+ 10.             local first 0
+ 11.         }
+ 12.         else {
+ 13.             append using `acc'
+ 14.             quietly save `acc', replace
+ 15.         }
+ 16.     }
+
+  CCD directory: state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=01, endpoint 1 of 1 (177 records).
+
+Data successfully loaded into Stata and ready to use.
+  CCD directory: state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=13, endpoint 1 of 1 (234 records).
+
+Data successfully loaded into Stata and ready to use.(label county_codedf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label enrollmentdf already defined)
+
+  CCD directory: state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=22, endpoint 1 of 1 (206 records).
+
+Data successfully loaded into Stata and ready to use.
+(variable lea_name was str50, now str60 to accommodate using data's values)
+(label county_codedf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label enrollmentdf already defined)
+
+  CCD directory: state FIPS 28
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=28, endpoint 1 of 1 (161 records).
+
+Data successfully loaded into Stata and ready to use.
+(variable lea_name was str35, now str60 to accommodate using data's values)
+(label county_codedf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label enrollmentdf already defined)
+
+  CCD directory: state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=37, endpoint 1 of 1 (348 records).
+
+Data successfully loaded into Stata and ready to use.
+(variable lea_name was str42, now str60 to accommodate using data's values)
+(label county_codedf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label enrollmentdf already defined)
+
+  CCD directory: state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/directory/2018/?fips=45, endpoint 1 of 1 (103 records).
+
+Data successfully loaded into Stata and ready to use.
+(variable lea_name was str59, now str60 to accommodate using data's values)
+(label county_codedf already defined)
+(label yeardf already defined)
+(label fipsdf already defined)
+(label enrollmentdf already defined)
+.     use `acc', clear
+.     compress
+  (0 bytes saved)
+.     save "${raw}/ccd_directory.dta", replace
+file ./data/raw/ccd_directory.dta saved
+. }
+
+. else {
+.     display as text "  Reusing data/raw/ccd_directory.dta"
+.     use "${raw}/ccd_directory.dta", clear
+. }
+
+. 
+. timer off 12
+
+. quietly timer list 12
+
+. display as result _n "CCD directory rows downloaded: " _N " districts in " %6.1f r(t12) " seconds"
+
+CCD directory rows downloaded: 1229 districts in  358.5 seconds
+
+. record_runtime "01_ccd_directory" `=r(t12)'
+
+. tabulate fips
+
+         Federal Information Processing |
+                   Standards state code |      Freq.     Percent        Cum.
+----------------------------------------+-----------------------------------
+                                Alabama |        177       14.40       14.40
+                                Georgia |        234       19.04       33.44
+                              Louisiana |        206       16.76       50.20
+                            Mississippi |        161       13.10       63.30
+                         North Carolina |        348       28.32       91.62
+                         South Carolina |        103        8.38      100.00
+----------------------------------------+-----------------------------------
+                                  Total |      1,229      100.00
+
+. 
+. *------------------------------------------------------------------------------
+. * 1C. CCD enrollment by race (all grades, grade code 99)
+. *------------------------------------------------------------------------------
+. timer clear 13
+
+. timer on 13
+
+. 
+. capture confirm file "${raw}/ccd_enrollment_race.dta"
+
+. if _rc | `reuse' != 1 {
+.     tempfile acc
+.     local first 1
+.     foreach st in $STATES {
+  2.         display as text _n "  CCD enrollment by race: state FIPS `st'"
+  3.         fetch_or_stop "district ccd enrollment race" "year=${EDF_YEAR} fips=`st' grade=99"
+  4.         local keepvars leaid year fips race enrollment
+  5.         capture confirm variable leaid_num
+  6.         if !_rc local keepvars `keepvars' leaid_num
+  7.         quietly keep `keepvars'
+  8.         if `first' {
+  9.             quietly save `acc', replace
+ 10.             local first 0
+ 11.         }
+ 12.         else {
+ 13.             append using `acc'
+ 14.             quietly save `acc', replace
+ 15.         }
+ 16.     }
+
+  CCD enrollment by race: state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=01, endpoint 1 of 1 (1377 records).
+
+Data successfully loaded into Stata and ready to use.
+  CCD enrollment by race: state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=13, endpoint 1 of 1 (1935 records).
+
+Data successfully loaded into Stata and ready to use.(label enrollmentdf already defined)
+(label racedf already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  CCD enrollment by race: state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=22, endpoint 1 of 1 (1836 records).
+
+Data successfully loaded into Stata and ready to use.(label enrollmentdf already defined)
+(label racedf already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  CCD enrollment by race: state FIPS 28
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=28, endpoint 1 of 1 (1395 records).
+
+Data successfully loaded into Stata and ready to use.(label enrollmentdf already defined)
+(label racedf already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  CCD enrollment by race: state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=37, endpoint 1 of 1 (2835 records).
+
+Data successfully loaded into Stata and ready to use.(label enrollmentdf already defined)
+(label racedf already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  CCD enrollment by race: state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/ccd/enrollment/2018/grade-99/race/?fips=45, endpoint 1 of 1 (918 records).
+
+Data successfully loaded into Stata and ready to use.(label enrollmentdf already defined)
+(label racedf already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+.     use `acc', clear
+.     compress
+  (0 bytes saved)
+.     save "${raw}/ccd_enrollment_race.dta", replace
+file ./data/raw/ccd_enrollment_race.dta saved
+. }
+
+. else {
+.     display as text "  Reusing data/raw/ccd_enrollment_race.dta"
+.     use "${raw}/ccd_enrollment_race.dta", clear
+. }
+
+. 
+. timer off 13
+
+. quietly timer list 13
+
+. display as result _n "CCD enrollment rows downloaded: " _N " (district x race) in " ///
+>     %6.1f r(t13) " seconds"
+
+CCD enrollment rows downloaded: 10296 (district x race) in   80.7 seconds
+
+. record_runtime "01_ccd_enrollment" `=r(t13)'
+
+. tabulate fips
+
+         Federal Information Processing |
+                   Standards state code |      Freq.     Percent        Cum.
+----------------------------------------+-----------------------------------
+                                Alabama |      1,377       13.37       13.37
+                                Georgia |      1,935       18.79       32.17
+                              Louisiana |      1,836       17.83       50.00
+                            Mississippi |      1,395       13.55       63.55
+                         North Carolina |      2,835       27.53       91.08
+                         South Carolina |        918        8.92      100.00
+----------------------------------------+-----------------------------------
+                                  Total |     10,296      100.00
+
+. 
+. *------------------------------------------------------------------------------
+. * 1D. SAIPE: child poverty (ages 5 to 17) by school district
+. *------------------------------------------------------------------------------
+. timer clear 14
+
+. timer on 14
+
+. 
+. capture confirm file "${raw}/saipe_district.dta"
+
+. if _rc | `reuse' != 1 {
+.     tempfile acc
+.     local first 1
+.     foreach st in $STATES {
+  2.         display as text _n "  SAIPE: state FIPS `st'"
+  3.         fetch_or_stop "district saipe" "year=${EDF_YEAR} fips=`st'"
+  4.         quietly keep leaid year fips est_population_5_17 est_population_5_17_poverty_pct
+  5.         if `first' {
+  6.             quietly save `acc', replace
+  7.             local first 0
+  8.         }
+  9.         else {
+ 10.             append using `acc'
+ 11.             quietly save `acc', replace
+ 12.         }
+ 13.     }
+
+  SAIPE: state FIPS 01
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=01, endpoint 1 of 1 (139 records).
+
+Data successfully loaded into Stata and ready to use.
+  SAIPE: state FIPS 13
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=13, endpoint 1 of 1 (182 records).
+
+Data successfully loaded into Stata and ready to use.(label est_population_5_17_poverty_pcdf already defined)
+(label est_population_5_17df already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  SAIPE: state FIPS 22
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=22, endpoint 1 of 1 (69 records).
+
+Data successfully loaded into Stata and ready to use.(label est_population_5_17_poverty_pcdf already defined)
+(label est_population_5_17df already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  SAIPE: state FIPS 28
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=28, endpoint 1 of 1 (139 records).
+
+Data successfully loaded into Stata and ready to use.(label est_population_5_17_poverty_pcdf already defined)
+(label est_population_5_17df already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  SAIPE: state FIPS 37
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=37, endpoint 1 of 1 (118 records).
+
+Data successfully loaded into Stata and ready to use.(label est_population_5_17_poverty_pcdf already defined)
+(label est_population_5_17df already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+
+  SAIPE: state FIPS 45
+Please be patient - downloading data.
+
+I estimate that the download for the entire file you requested will take less than one minute.
+This is only an estimate, so actual time may vary due to internet speed and file size differences.
+
+Progress for each endpoint and call to the API will print to your screen. Please wait...
+If this time is too long for you to wait, try adding the "csv" option to the end of your command to download the full cs
+> v directly.
+
+Getting data from /api/v1/school-districts/saipe/2018/?fips=45, endpoint 1 of 1 (83 records).
+
+Data successfully loaded into Stata and ready to use.(label est_population_5_17_poverty_pcdf already defined)
+(label est_population_5_17df already defined)
+(label fipsdf already defined)
+(label yeardf already defined)
+.     use `acc', clear
+.     compress
+  (0 bytes saved)
+.     save "${raw}/saipe_district.dta", replace
+file ./data/raw/saipe_district.dta saved
+. }
+
+. else {
+.     display as text "  Reusing data/raw/saipe_district.dta"
+.     use "${raw}/saipe_district.dta", clear
+. }
+
+. 
+. timer off 14
+
+. quietly timer list 14
+
+. display as result _n "SAIPE rows downloaded: " _N " districts in " %6.1f r(t14) " seconds"
+
+SAIPE rows downloaded: 730 districts in   47.6 seconds
+
+. record_runtime "01_saipe" `=r(t14)'
+
+. tabulate fips
+
+         Federal Information Processing |
+                   Standards state code |      Freq.     Percent        Cum.
+----------------------------------------+-----------------------------------
+                                Alabama |        139       19.04       19.04
+                                Georgia |        182       24.93       43.97
+                              Louisiana |         69        9.45       53.42
+                            Mississippi |        139       19.04       72.47
+                         North Carolina |        118       16.16       88.63
+                         South Carolina |         83       11.37      100.00
+----------------------------------------+-----------------------------------
+                                  Total |        730      100.00
+
+. 
+. tempname sf
+
+. file open `sf' using "${raw}/scope_stamp.txt", write replace text
+
+. file write `sf' "STATES=${STATES}|YEAR=${EDF_YEAR}|GRADES=${GRADES}" _n
+
+. file close `sf'
+
+. 
+. display as result _n "Download complete. Raw files are in data/raw and are not versioned."
+
+Download complete. Raw files are in data/raw and are not versioned.
+
+. 
+. log close step01
+      name:  step01
+       log:  ./output/logs/01_download.log
+  log type:  text
+ closed on:   3 Nov 2026, 19:35:54
+------------------------------------------------------------------------------------------------------------------------

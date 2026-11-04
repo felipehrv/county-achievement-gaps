@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light dark;
+  --plane:#f7f7f4; --surface:#fcfcfb; --surface-2:#efeeea;
+  --ink:#0b0b0b; --ink-2:#4d4c49; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:#b9b8b0;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c7:#4a3aa7;
+  --neg:#e34948;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --wide:1100px; --measure:620px; --gutter:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#111110; --surface:#1a1a19; --surface-2:#242422;
+    --ink:#f4f4f1; --ink-2:#c3c2b7; --muted:#8f8e88;
+    --grid:#2c2c2a; --axis:#3d3d3a; --border:#4a4a46;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
+    --neg:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#111110; --surface:#1a1a19; --surface-2:#242422;
+  --ink:#f4f4f1; --ink-2:#c3c2b7; --muted:#8f8e88;
+  --grid:#2c2c2a; --axis:#3d3d3a; --border:#4a4a46;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
+  --neg:#e66767;
+}
+*{box-sizing:border-box}
+html{background:var(--plane)}
+body{margin:0; background:var(--plane); color:var(--ink); font-family:var(--serif);
+  font-size:1.125rem; line-height:1.6; -webkit-font-smoothing:antialiased}
+a{color:var(--c1)}
+a:focus-visible{outline:2px solid var(--c1); outline-offset:2px}
+.wrap{max-width:var(--wide); margin:0 auto; padding:0 var(--gutter)}
+.prose, .prose-wide{max-width:var(--measure); margin-left:auto; margin-right:auto}
+.prose p, .prose ul, .prose ol{margin:0 0 1.15em}
+.prose li{margin-bottom:.35em}
+.lead{font-size:1.2rem}
+nav.top{position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--plane) 88%, transparent);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--grid); font-family:var(--sans); font-size:.88rem}
+nav.top .wrap{display:flex; gap:18px; align-items:center; min-height:46px; flex-wrap:wrap}
+nav.top .brand{font-family:var(--serif); font-weight:700; color:var(--ink); margin-right:auto}
+nav.top .links{display:flex; gap:16px; flex-wrap:wrap}
+nav.top a{color:var(--ink-2); text-decoration:none; border-bottom:2px solid transparent; padding:12px 0}
+nav.top a:hover{border-bottom-color:var(--axis)}
+header.mast{text-align:center; padding:3.2rem 0 1.4rem}
+.kicker{font-family:var(--sans); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(1.8rem,4.2vw,3rem); line-height:1.1; letter-spacing:-.01em;
+  max-width:26ch; margin:.6rem auto .8rem; text-wrap:balance}
+.deck{font-size:clamp(1.15rem,2vw,1.4rem); line-height:1.4; color:var(--ink-2); max-width:44ch; margin:0 auto 1rem}
+.byline{font-family:var(--sans); font-size:.9rem; color:var(--muted)}
+.byline b{color:var(--ink); font-weight:600}
+h2{font-family:var(--serif); font-weight:700; font-size:clamp(1.7rem,3.4vw,2.4rem); line-height:1.15; margin:3.4rem auto 1rem; max-width:var(--measure)}
+h2 small{display:block; font-family:var(--sans); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:.4rem}
+h1 a, h2 a, h3 a{color:inherit; text-decoration:none}
+h3{font-family:var(--sans); font-size:1.02rem; font-weight:600; margin:1.6rem 0 .5rem}
+.chart h3{font-family:var(--serif); font-size:1.15rem; font-weight:700; line-height:1.3; margin:0 0 .6rem}
+figure{margin:0}
+figure.chart{margin:1.4rem auto; max-width:var(--wide)}
+.card{background:var(--surface); border:1px solid var(--grid); border-radius:8px; padding:1rem 1.1rem}
+figure.chart img{display:block; width:100%; height:auto; background:#fff; border-radius:4px}
+figcaption{font-family:var(--sans); font-size:.86rem; color:var(--muted); line-height:1.45; margin-top:.5rem}
+figcaption b{color:var(--ink-2); font-weight:600}
+.tiles{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; max-width:var(--wide); margin:1.4rem auto}
+.tile{background:var(--surface); border:1px solid var(--grid); border-radius:6px; padding:.8rem .9rem; font-family:var(--sans)}
+.tile .v{font-size:1.7rem; font-weight:600; line-height:1.1; color:var(--ink)}
+.tile .l{font-size:.84rem; color:var(--ink-2); margin-top:.2rem}
+.tile .d{font-size:.78rem; color:var(--muted)}
+.pull{border-left:3px solid var(--c2); padding-left:1rem; margin:1.6rem auto; font-size:1.25rem; line-height:1.4; color:var(--ink); max-width:var(--measure)}
+.box{background:var(--surface-2); border-left:3px solid var(--c1); border-radius:6px; padding:.9rem 1.1rem; margin:1.4rem auto;
+  font-family:var(--sans); font-size:.98rem; line-height:1.5; max-width:var(--measure)}
+.box h4{font-family:var(--serif); font-size:1.05rem; margin:0 0 .4rem}
+.box p{margin:0 0 .6em}
+.methods{font-family:var(--sans); font-size:.95rem; background:var(--surface); border:1px solid var(--grid); border-radius:8px;
+  padding:1.2rem 1.3rem; margin:1.4rem auto; max-width:var(--wide)}
+.methods h3{font-family:var(--serif); font-size:1.3rem; font-weight:700; margin:0 0 .8rem}
+.methods dl{display:grid; grid-template-columns:minmax(140px, 220px) 1fr; gap:.5rem 1.2rem; margin:0}
+.methods dt{color:var(--muted); font-weight:600}
+.methods dd{margin:0}
+.files{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-top:.8rem}
+.f{background:var(--surface-2); border:1px solid var(--grid); border-radius:6px; padding:.7rem .8rem}
+.f code{font-size:.8rem}
+.f div{font-size:.78rem; color:var(--muted); margin-top:.25rem}
+.cite{font-family:var(--sans); font-size:.9rem; background:var(--surface); border:1px solid var(--grid); border-radius:6px;
+  padding:.8rem 1rem; margin:1.4rem auto; max-width:var(--wide)}
+footer{padding:2rem 0 3rem; margin-top:2.5rem; border-top:1px solid var(--grid); color:var(--muted); font-family:var(--sans); font-size:.86rem}
+code{font-family:var(--mono); font-size:.88em; background:var(--surface-2); padding:1px 5px; border-radius:3px}
+pre{font-family:var(--mono); font-size:.8rem; line-height:1.45; background:var(--surface-2); border:1px solid var(--grid);
+  border-radius:6px; padding:.8rem 1rem; overflow-x:auto; max-width:var(--wide); margin:1rem auto}
+pre code{background:none; padding:0; font-size:inherit}
+.tbl-link{background:none; border:0; padding:0; font-family:var(--sans); font-size:.82rem; color:var(--ink-2); text-decoration:underline; cursor:pointer; margin-top:.6rem}
+.tbl-view{display:none; margin-top:.8rem; overflow-x:auto}
+.tbl-view.on{display:block}
+details.tbl{margin-top:.6rem; font-family:var(--sans)}
+details.tbl summary{font-size:.82rem; color:var(--ink-2); text-decoration:underline; cursor:pointer}
+details.tbl .scroller{overflow-x:auto; margin-top:.6rem}
+table.dt{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:.84rem; font-variant-numeric:tabular-nums}
+table.dt th, table.dt td{border-bottom:1px solid var(--grid); padding:.3rem .45rem; text-align:right; vertical-align:top}
+table.dt th:first-child, table.dt td:first-child{text-align:left}
+table.dt thead th{background:var(--surface-2); color:var(--ink-2); font-weight:600; text-align:right}
+table.dt thead th:first-child{text-align:left}
+.tbl-title{font-family:var(--sans); font-size:.86rem; color:var(--ink-2); font-weight:600; margin:0 0 .4rem}
+table:not(.dt){border-collapse:collapse; font-family:var(--sans); font-size:.9rem; margin:1rem auto; max-width:var(--wide)}
+table:not(.dt) th, table:not(.dt) td{border-bottom:1px solid var(--grid); padding:.3rem .6rem; text-align:left; vertical-align:top}
+table:not(.dt) th{background:var(--surface-2); color:var(--ink-2); font-weight:600}
+.manual h1{text-align:left; margin-left:0; max-width:none}
+.manual h2{max-width:none; margin-left:0}
+.manual > p, .manual > ul, .manual > ol{max-width:var(--measure); margin-left:auto; margin-right:auto}
+.manual .step{background:var(--surface); border:1px solid var(--grid); border-radius:8px; padding:1rem 1.2rem; margin:1.2rem auto; max-width:var(--wide); font-family:var(--sans); font-size:.95rem}
+.manual .step h4{margin:.2rem 0 .3rem; font-family:var(--serif); font-size:1.05rem}
+@media (max-width:820px){ body{font-size:1.05rem} .methods dl{grid-template-columns:1fr}
+  nav.top{position:static} nav.top .wrap{gap:10px 14px; padding-top:8px; padding-bottom:8px} nav.top a{padding:2px 0} }
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+@media print{ nav.top{display:none} .tbl-view{display:block} }
+</style>
+<title>Replication manual: county achievement gaps</title>
+</head>
+<body class="manual">
+<div class="wrap">
+<header class="mast">
+<div class="kicker">Replication manual · County achievement gaps</div>
+<h1>Replicating and extending the county achievement gap pipeline</h1>
+<p class="deck">A step-by-step guide for an analyst who has to repeat the estimates or move them to other states and years. Each step says what it does, which command runs it, what the output should look like, and what to do when it fails.</p>
+<div class="byline">Felipe Hernán Rodríguez Villalta · Stata and Mata · Numbers in this document are read from the run that generated it</div>
+</header>
+<div class="box">
+<h4>How this document is built</h4>
+<p>This page is produced by <code>dyndoc</code> from <code>code/replication.txt</code> at the end of every run of <code>run_all.do</code>. The counts, times and tables below are read from the files the pipeline wrote, so the manual cannot drift away from the code. The run described here covers school year 2018-19 in 6 states (FIPS 01 13 22 28 37 45), grades 4 6 8.</p>
+</div>
+<h2><a href="#1-environment-and-dependencies" id="1-environment-and-dependencies">1. Environment and dependencies</a></h2>
+<p><strong>What it does.</strong> Sets the scope, the paths and the dependencies for the whole pipeline. Everything is controlled from <code>run_all.do</code>, which runs from the repository root.</p>
+<p><strong>Requirements.</strong> Stata 17 or later (this run used Stata 18.5 BE). Three community packages from SSC: <code>educationdata</code> (the client for the Urban Institute Education Data Portal, which installs <code>libjson</code> on first use), <code>hetop</code> (the heteroskedastic ordered probit estimator of Shear and Reardon) and <code>estout</code>. <code>run_all.do</code> installs any of them that is missing. The companion command <code>gapci</code> and its help file ship in <code>code/ado</code> and are added to the ado path by <code>run_all.do</code>. The map uses <code>grmap</code> and <code>spshape2dta</code>, which are part of Stata since version 15.</p>
+<p><strong>The two scope globals.</strong> The first lines of <code>run_all.do</code> define what is estimated:</p>
+<pre><code>global STATES &quot;01 13 22 28 37 45&quot;
+global EDF_YEAR 2018
+</code></pre>
+<p><code>STATES</code> lists state FIPS codes. <code>EDF_YEAR</code> is the school year coded as the portal codes it, by the calendar year in which the year begins: 2018 means 2018-19. Other parameters follow: <code>GRADES</code>, <code>MIN_CELL_N</code> (the cell-size threshold), <code>MAKE_MAP</code>, <code>SEDA_ACCEPT_DUA</code> (see step 6), <code>REUSE_RAW</code> and <code>RUN_STEPS</code>. The full list in <code>RUN_STEPS</code> (<code>&quot;01 02 03 04 05 docs&quot;</code>) runs the whole pipeline and builds the documents; the documents are generated only when <code>docs</code> is listed.</p>
+<p><strong>The command.</strong> From the repository root, in batch:</p>
+<pre><code>/Applications/Stata/StataBE.app/Contents/MacOS/StataBE -e do run_all.do      (macOS)
+stata-mp -b do run_all.do                                                     (Linux or Unix)
+</code></pre>
+<p>or interactively after <code>cd</code> to the root: <code>do run_all.do</code>.</p>
+<p><strong>What to expect.</strong> Five step logs and a master log in <code>output/logs</code>, the county-level files in <code>data/derived</code>, tables and figures in <code>output</code>, and the two documents in <code>docs</code>. In the run that produced this page the steps took  16.3 minutes in total: download  14.8, build  0.0, estimation  1.0, validation  0.4, figures and tables  0.1 (a dot marks a step that did not run in that session).</p>
+<p><strong>If it fails.</strong> <code>run_all.do must be run from the repository root</code> means the working directory is wrong. A failed <code>ssc install</code> means no internet connection or an SSC outage; install the package later and run again. On the machine used here, Stata in batch mode returned exit code 0 even after an error, so do not rely on the exit status: read the log, where an error shows as a line <code>r(#);</code> near the end.</p>
+<h2><a href="#2-download-code01-downloaddo" id="2-download-code01-downloaddo">2. Download (code/01_download.do)</a></h2>
+<p><strong>What it does.</strong> Downloads four district-level sources from the Urban Institute Education Data Portal, one request per state (and per grade for EDFacts), and saves the variables the pipeline uses, with their values unchanged, in <code>data/raw</code>, which git ignores. A scope stamp (states, year, grades) is written next to the files; with <code>REUSE_RAW</code> set to 1 the files are reused only if the stamp matches the current scope.</p>
+<table>
+<thead>
+<tr><th> Source </th><th> Portal endpoint </th><th> What it contributes </th></tr>
+</thead>
+<tbody>
+<tr><td> EDFacts </td><td> <code>school-districts/edfacts/assessments/{year}/grade-{g}/race/</code> </td><td> students tested and percent at or above proficient in mathematics, by district, grade and race </td></tr>
+<tr><td> CCD directory </td><td> <code>school-districts/ccd/directory/{year}/</code> </td><td> county code and total enrollment of every district </td></tr>
+<tr><td> CCD enrollment by race </td><td> <code>school-districts/ccd/enrollment/{year}/grade-99/race/</code> </td><td> Black and total enrollment of every district </td></tr>
+<tr><td> SAIPE </td><td> <code>school-districts/saipe/{year}/</code> </td><td> child poverty rate (ages 5 to 17) of every district </td></tr>
+</tbody>
+</table>
+<p><strong>The command.</strong> <code>do code/01_download.do</code> through <code>run_all.do</code> (set <code>RUN_STEPS</code> to <code>01</code> to run it alone).</p>
+<p><strong>What to expect.</strong> Rows per source in this run, with the time each download took:</p>
+<table>
+<thead>
+<tr><th> File in data/raw </th><th> Rows </th><th> Seconds (most recent run of step 01) </th></tr>
+</thead>
+<tbody>
+<tr><td> <code>edfacts_district_race.dta</code> (district by grade by race) </td><td>    16,675 </td><td>  401.1 </td></tr>
+<tr><td> <code>ccd_directory.dta</code> (districts) </td><td>     1,229 </td><td>  358.5 </td></tr>
+<tr><td> <code>ccd_enrollment_race.dta</code> (district by race) </td><td>    10,296 </td><td>   80.7 </td></tr>
+<tr><td> <code>saipe_district.dta</code> (districts) </td><td>       730 </td><td>   47.6 </td></tr>
+</tbody>
+</table>
+<p>The portal keeps the Department of Education&rsquo;s special codes: -1 missing or not reported, -2 not applicable, -3 suppressed. They arrive as numbers; step 3 recodes them to missing in every source and counts them for EDFacts.</p>
+<p><strong>If it fails.</strong> <code>Server Error (500)</code> from the EDFacts endpoint means the year is not in the portal: assessment results exist for 2009 to 2018 and for 2020 only. <code>Unable to open URL</code> is a transient connection problem; the script retries twice after ten seconds and then stops, so run it again. On the first use <code>educationdata</code> installs <code>libjson</code> from SSC, which needs a connection.</p>
+<h2><a href="#3-build-the-county-files-code02-build-masterdo" id="3-build-the-county-files-code02-build-masterdo">3. Build the county files (code/02_build_master.do)</a></h2>
+<p><strong>What it does.</strong> Recodes the special codes, applies the cell-size rule, assigns districts to counties, aggregates to county by grade by subgroup, reconstructs four ordered categories from the proficiency rate, and builds the county covariates.</p>
+<p><strong>The command.</strong> <code>do code/02_build_master.do</code> through <code>run_all.do</code>.</p>
+<p><strong>What to expect: suppression and exclusions.</strong> District-grade-subgroup rows leave the sample for three reasons. The table below is the record of what was lost and where, for the three subgroups together.</p>
+<pre><code>
+
+
+
+
+
+
+
+
+  +-------------------------------------------------------------------+
+  |     subgroup                      excl_reason    rows    students |
+  |-------------------------------------------------------------------|
+  | All students                             Kept   2,568   1,372,973 |
+  | All students            Suppressed by EDFacts      18          55 |
+  | All students   Not reported or not applicable      16           0 |
+  | All students             Fewer than 50 tested     396      11,769 |
+  |-------------------------------------------------------------------|
+  |        White                             Kept   1,831     604,829 |
+  |        White            Suppressed by EDFacts     331         784 |
+  |        White   Not reported or not applicable       1           0 |
+  |        White             Fewer than 50 tested     593      15,854 |
+  |-------------------------------------------------------------------|
+  |        Black                             Kept   1,594     451,154 |
+  |        Black            Suppressed by EDFacts     252         678 |
+  |        Black             Fewer than 50 tested   1,051      25,847 |
+  +-------------------------------------------------------------------+
+
+</code></pre>
+<p>Suppression by the Department of Education (code -3) removed    601 district rows; where the number tested was reported, those rows held  1,517 students in all. Suppressed cells are small by construction, and the pipeline never fills them in. The student totals in the accounting are sums of the published numbers tested in excluded rows; a total built from fewer than three rows is withheld. The cell-size rule (fewer than 50 tested) removed  2,040 rows; for Black students it set aside  25,847 of   477,001 tested students,  5.4 percent. By state:</p>
+<table class="dt">
+<thead><tr><th>State</th><th>District-grade rows, Black</th><th>Kept</th><th>Suppressed by EDFacts</th><th>Fewer than 50 tested</th><th>Black students tested in kept rows</th><th>Black students tested in small rows</th><th>Share of Black students excluded by the size rule</th></tr></thead>
+<tbody>
+<tr><td>Alabama</td><td>410</td><td>218</td><td>28</td><td>164</td><td>50816</td><td>3956</td><td>0.072</td></tr>
+<tr><td>Georgia</td><td>592</td><td>318</td><td>44</td><td>230</td><td>141978</td><td>6103</td><td>0.041</td></tr>
+<tr><td>Louisiana</td><td>466</td><td>317</td><td>23</td><td>126</td><td>66380</td><td>3449</td><td>0.049</td></tr>
+<tr><td>Mississippi</td><td>428</td><td>297</td><td>9</td><td>122</td><td>50260</td><td>3520</td><td>0.065</td></tr>
+<tr><td>North Carolina</td><td>747</td><td>255</td><td>145</td><td>347</td><td>83822</td><td>6758</td><td>0.075</td></tr>
+<tr><td>South Carolina</td><td>254</td><td>189</td><td>3</td><td>62</td><td>57898</td><td>2061</td><td>0.034</td></tr>
+</tbody></table>
+<p><strong>What to expect: counties.</strong> A county enters when it has a Black cell of at least 50 tested students in every one of the 3 grades; a county with no kept cell in some grade fails the rule. Counties with any kept Black cell and counties meeting the rule, by state:</p>
+<pre><code>(3 vars, 6 obs)
+
+
+
+
+
+
+  +----------------------------------------------------------------+
+  |           fips   counties_with_black_cells   counties_eligible |
+  |----------------------------------------------------------------|
+  |        Alabama                          48                  45 |
+  |        Georgia                          97                  85 |
+  |      Louisiana                          58                  57 |
+  |    Mississippi                          68                  61 |
+  | North Carolina                          65                  63 |
+  |----------------------------------------------------------------|
+  | South Carolina                          44                  44 |
+  +----------------------------------------------------------------+
+
+</code></pre>
+<p>The proficiency file has 3,031 county-grade-subgroup cells in 355 counties; 293 counties have all three subgroups in all three grades. The White cell is the one missing in every incomplete cell, in majority-Black counties where fewer than 50 White students were tested in any district.</p>
+<p><strong>What to expect: covariates.</strong> One row per county with the child poverty rate, the Black share of enrollment, the between-district dispersion of the Black share and the log number of districts. The number of counties whose covariates had to be imputed with the sample mean is written to <code>output/tables/covariate_imputation.csv</code>; in this run:</p>
+<pre><code>(3 vars, 4 obs)
+
+
+  +--------------------------------------------------------------+
+  |               variable   counties_imputed   sample_mean_used |
+  |--------------------------------------------------------------|
+  |           poverty_rate                  0           .2752136 |
+  |            share_black                  0           .4520424 |
+  |           seg_bw_index                  0           .0824729 |
+  | district_fragmentation                  0           .5309059 |
+  +--------------------------------------------------------------+
+
+
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+poverty_rate |        355    .2752136    .0981978     .04724    .653871
+ share_black |        355    .4520424    .2374937   .0408341   .9957717
+seg_bw_index |        355    .0824729    .1146685          0   .4165392
+district_f~n |        355    .5309059    .6834667          0   4.356709
+ n_districts |        355    2.476056    5.005236          1         78
+
+</code></pre>
+<p><strong>Decisions the code takes, and why.</strong> Every merge uses the numeric value of the district id, because the portal zero-pads the seven-digit <code>leaid</code> in some files and not in others; a string merge loses every district in states whose FIPS code starts with zero. Directory records whose county code lies in another state are dropped (one record in this run). The county proficiency rate is the mean of district rates weighted by the number tested; the number tested is the plain sum (<code>rawsum</code>), never the weighted sum. The composition and dispersion measures use the districts with a Black share in the enrollment file, and the district count every district. The four ordered categories are reconstructed from the single proficiency cut under the assumption of a normal distribution with unit variance and cut scores at -1, 0 and 1; a rate of exactly 0 or 100 would be bounded at 0.5 and 99.5 percent (none occurs in this scope); see the README for what this implies.</p>
+<p><strong>If it fails.</strong> <code>variable race not found</code> or a race label other than <code>Total</code>, <code>White</code> and <code>Black</code> means the portal changed its value labels; check <code>label list</code> on the raw file. <code>merge</code> reporting zero matches between SAIPE and the directory means the district id arrived in a new format; compare <code>leaid</code> in the two raw files.</p>
+<h2><a href="#4-hetop-estimation-code03-estimate-gapsdo-parts-1-and-2" id="4-hetop-estimation-code03-estimate-gapsdo-parts-1-and-2">4. HETOP estimation (code/03_estimate_gaps.do, parts 1 and 2)</a></h2>
+<p><strong>What it does.</strong> Fits a heteroskedastic ordered probit model (Reardon, Shear, Castellano and Ho 2017) to every county-grade cell with three groups (all students, White, Black) and four categories, with <code>hetop</code> (<code>numcats(4) identify(sums) gaps minsize(20)</code>, the same call for every cell), and saves both the identification-metric and the standardized estimates; the gaps use the standardized ones.</p>
+<p><strong>The command.</strong> <code>do code/03_estimate_gaps.do</code> through <code>run_all.do</code> (<code>RUN_STEPS</code> <code>03</code>). Parts 3 to 6 of the same script are described in step 5.</p>
+<p><strong>What to expect.</strong> 1,065 cells fit in   58.7 seconds, about  0.06 seconds per cell. Convergence by state:</p>
+<table class="dt">
+<thead><tr><th>State</th><th>County-grade cells</th><th>Converged</th><th>Incomplete (a subgroup missing)</th><th>Failed or not converged</th></tr></thead>
+<tbody>
+<tr><td>Alabama</td><td>135</td><td>105</td><td>30</td><td>0</td></tr>
+<tr><td>Georgia</td><td>255</td><td>230</td><td>25</td><td>0</td></tr>
+<tr><td>Louisiana</td><td>171</td><td>155</td><td>16</td><td>0</td></tr>
+<tr><td>Mississippi</td><td>183</td><td>124</td><td>59</td><td>0</td></tr>
+<tr><td>North Carolina</td><td>189</td><td>174</td><td>15</td><td>0</td></tr>
+<tr><td>South Carolina</td><td>132</td><td>113</td><td>19</td><td>0</td></tr>
+</tbody></table>
+<p>Incomplete cells are those where one subgroup is missing after the size rule; they are written out with missing estimates and do not enter the gap computation. Because the categories were reconstructed from one proficiency rate, the standardized SDs sit close to 1:</p>
+<pre><code>
+
+                HETOP SD, standardized metric
+-------------------------------------------------------------
+      Percentiles      Smallest
+ 1%     .9075923       .8050529
+ 5%     .9336957       .8050869
+10%      .945683       .8190114       Obs               2,703
+25%     .9619023       .8219321       Sum of wgt.       2,703
+
+50%     .9745366                      Mean           .9729528
+                        Largest       Std. dev.      .0234185
+75%     .9879546        1.05285
+90%     .9975298       1.061177       Variance       .0005484
+95%     1.002059       1.152888       Skewness      -.6608888
+99%     1.020701        1.18785       Kurtosis       11.44072
+
+</code></pre>
+<p><strong>If it fails.</strong> <code>hetop</code> not found: <code>ssc install hetop</code>. A cell that fails to converge, or that returns fewer than three groups, is counted and skipped; the failure does not stop the run. Many failures at once usually mean a category column with zero counts everywhere, which happens with very small <code>MIN_CELL_N</code>.</p>
+<h2><a href="#5-gaps-gapci-pooling-and-the-regression-ladder-code03-estimate-gapsdo-parts-3-to-6" id="5-gaps-gapci-pooling-and-the-regression-ladder-code03-estimate-gapsdo-parts-3-to-6">5. Gaps, gapci, pooling and the regression ladder (code/03_estimate_gaps.do, parts 3 to 6)</a></h2>
+<p><strong>What it does.</strong> Computes the White-Black gap V (Ho 2009) and its delta-method standard error for every cell with the Mata routine <code>compute_gaps_vec()</code>; compares V with the direct difference of probits and its binomial standard error; pools the grade-level gaps of each county into one estimate with a precision-weighted random-intercept model (Hedges and Vevea 1998); and estimates the four-model ladder.</p>
+<p><strong>The command.</strong> Same script as step 4.</p>
+<p><strong>What to expect: the companion command.</strong> <code>gapci</code> reproduces <code>compute_gaps_vec()</code> cell by cell; the script stops if the two disagree beyond numerical precision. Its output for one cell:</p>
+<pre><code>
+
+
+------------------------------------------------------------
+ Standardized achievement gap (HETOP / V-statistic)
+------------------------------------------------------------
+  Group 1 (reference): mean =   0.183  SD =   0.982
+  Group 2            : mean =  -0.422  SD =   0.986
+  ------------------------------------------------------
+  V statistic      =   0.615
+  SE (delta method)=   0.080
+  95% CI          = [  0.459,   0.771]
+------------------------------------------------------------
+
+
+</code></pre>
+<p><strong>What to expect: HETOP against the direct estimator.</strong> Across   901 cells the correlation between V and the direct probit difference is 0.9987, with a median absolute difference of 0.0054. The binomial standard error is 1.30 times the HETOP standard error at the median (10th to 90th percentile 1.22 to 1.35). The HETOP standard errors treat the reconstructed categories as observed; the binomial ones use only the information the published rate carries. Both standard errors are kept in <code>gaps_county_level.dta</code>, and the county table reports both 95% intervals.</p>
+<p><strong>What to expect: pooling.</strong>   901 cell gaps pooled into 307 county estimates. The model multiplies every term, the county intercept included, by the square root of the cell weight before <code>mixed</code> fits it; on the transformed scale the county effect is a random coefficient on that square root. Fixed part: intercept  0.794, grade slope -0.0040 (SE 0.0027); county variance 0.0343; pooled gap at the reference grade 6: 0.770. The residual variance of the weighted model is  3.37; it would be 1 if the cell standard errors captured all the variation of a county&rsquo;s gap across grades. The pooled standard error is computed from the sum of cell precisions, so it is too small by a factor of about the square root of that variance. The median county gap is 0.755, the 10th and 90th percentiles 0.580 and 0.952.</p>
+<pre><code>
+
+     State FIPS code |      Freq.     Percent        Cum.
+---------------------+-----------------------------------
+             Alabama |         36       11.73       11.73
+             Georgia |         79       25.73       37.46
+           Louisiana |         52       16.94       54.40
+         Mississippi |         44       14.33       68.73
+      North Carolina |         58       18.89       87.62
+      South Carolina |         38       12.38      100.00
+---------------------+-----------------------------------
+               Total |        307      100.00
+
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+gap_wb_poo~d |        307    .7696789    .1579756   .4379011   1.472388
+gap_wb_poo~e |        307    .0620722    .0281333   .0135686   .1784398
+gap_wb_poo~t |        307    .0801074    .0364108   .0172893   .2389078
+    n_grades |        307    2.934853    .3167289          1          3
+
+</code></pre>
+<p><strong>What to expect: the ladder.</strong> Table 2 as written by the script:</p>
+<table border="0" width="*">
+<caption>Table 2. Regression of the pooled White-Black gap on county characteristics</caption>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>                    </td><td>         (1)              </td><td>         (2)              </td><td>         (3)              </td><td>         (4)              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>Child poverty rate (SAIPE, ages 5 to 17)</td><td>      -0.406<sup>*</sup>  </td><td>      -0.083              </td><td>      -0.328              </td><td>      -0.308              </td></tr>
+<tr><td>                    </td><td>     (0.228)              </td><td>     (0.183)              </td><td>     (0.265)              </td><td>     (0.282)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Log number of districts</td><td>                          </td><td>       0.102<sup>***</sup></td><td>       0.095<sup>***</sup></td><td>       0.100<sup>***</sup></td></tr>
+<tr><td>                    </td><td>                          </td><td>     (0.022)              </td><td>     (0.020)              </td><td>     (0.020)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Black share of enrollment</td><td>                          </td><td>                          </td><td>       0.205              </td><td>       0.208              </td></tr>
+<tr><td>                    </td><td>                          </td><td>                          </td><td>     (0.147)              </td><td>     (0.144)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Between-district dispersion of Black share</td><td>                          </td><td>                          </td><td>                          </td><td>      -0.056              </td></tr>
+<tr><td>                    </td><td>                          </td><td>                          </td><td>                          </td><td>     (0.192)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Constant            </td><td>       0.932<sup>***</sup></td><td>       0.752<sup>***</sup></td><td>       0.734<sup>***</sup></td><td>       0.731<sup>***</sup></td></tr>
+<tr><td>                    </td><td>     (0.064)              </td><td>     (0.051)              </td><td>     (0.054)              </td><td>     (0.052)              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>Counties            </td><td>         307              </td><td>         307              </td><td>         307              </td><td>         307              </td></tr>
+<tr><td>Adjusted R-squared  </td><td>       0.019              </td><td>       0.232              </td><td>       0.244              </td><td>       0.242              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td colspan=5>
+Weighted by the precision of the pooled gap. Robust standard errors in parentheses.
+</td></tr>
+</table>
+<p>The nested test of model 3 against model 4 gives F(1, 302) =  0.085, p = 0.770. The models describe associations between the county gap and county characteristics; none of them identifies a causal effect.</p>
+<p><strong>If it fails.</strong> <code>mixed</code> failing to converge is rare with these data; if it happens, inspect <code>gaps_cell_level.dta</code> for cells with a standard error of zero (the script drops them). <code>gapci and compute_gaps_vec() disagree</code> points to an edited copy of one of the two routines.</p>
+<h2><a href="#6-validation-against-seda-code04-validate-sedado" id="6-validation-against-seda-code04-validate-sedado">6. Validation against SEDA (code/04_validate_seda.do)</a></h2>
+<p><strong>What it does.</strong> Downloads the Stanford Education Data Archive county file (version 6.0, cohort-standardized scale), refits HETOP across the counties of each state and grade so that county means are on a common within-state metric, and correlates the pipeline&rsquo;s means and gaps with SEDA&rsquo;s within states.</p>
+<p><strong>Before running.</strong> SEDA is distributed under a data use agreement: no commercial use, no attempt to identify individuals, no redistribution of the files, acknowledgement of the source. Read it at <a href="https://edopportunity.org/opportunity/data/">https://edopportunity.org/opportunity/data/</a> and set <code>SEDA_ACCEPT_DUA</code> to 1 in <code>run_all.do</code>. With 0 the pipeline stops before this step and explains why. The file is saved in <code>data/raw/seda</code>, which git ignores, and the merged validation file in <code>data/derived</code> is ignored too.</p>
+<p><strong>The command.</strong> <code>do code/04_validate_seda.do</code> through <code>run_all.do</code> (<code>RUN_STEPS</code> <code>04</code>).</p>
+<p><strong>What to expect.</strong> The download of about 178 MB took   13.1 seconds in this run (0 means the file was reused), and the 54 within-state HETOP fits took   10.7 seconds. SEDA codes the school year by its spring, so portal year 2018 is matched to SEDA year 2019. Correlations within states, with both measures standardized within state and grade before grades are pooled:</p>
+<table class="dt">
+<thead><tr><th>Measure</th><th>State</th><th>County-grade cells</th><th>Pearson</th><th>Spearman</th></tr></thead>
+<tbody>
+<tr><td>County mean, all students</td><td>All states</td><td>1056</td><td>0.971</td><td>0.979</td></tr>
+<tr><td>County mean, all students</td><td>Alabama</td><td>135</td><td>0.979</td><td>0.984</td></tr>
+<tr><td>County mean, all students</td><td>Georgia</td><td>252</td><td>0.970</td><td>0.978</td></tr>
+<tr><td>County mean, all students</td><td>Louisiana</td><td>167</td><td>0.981</td><td>0.980</td></tr>
+<tr><td>County mean, all students</td><td>Mississippi</td><td>181</td><td>0.974</td><td>0.981</td></tr>
+<tr><td>County mean, all students</td><td>North Carolina</td><td>189</td><td>0.958</td><td>0.971</td></tr>
+<tr><td>County mean, all students</td><td>South Carolina</td><td>132</td><td>0.965</td><td>0.973</td></tr>
+<tr><td>County mean, White students</td><td>All states</td><td>891</td><td>0.930</td><td>0.940</td></tr>
+<tr><td>County mean, White students</td><td>Alabama</td><td>105</td><td>0.877</td><td>0.890</td></tr>
+<tr><td>County mean, White students</td><td>Georgia</td><td>227</td><td>0.970</td><td>0.972</td></tr>
+<tr><td>County mean, White students</td><td>Louisiana</td><td>151</td><td>0.844</td><td>0.872</td></tr>
+<tr><td>County mean, White students</td><td>Mississippi</td><td>121</td><td>0.950</td><td>0.954</td></tr>
+<tr><td>County mean, White students</td><td>North Carolina</td><td>174</td><td>0.960</td><td>0.965</td></tr>
+<tr><td>County mean, White students</td><td>South Carolina</td><td>113</td><td>0.943</td><td>0.937</td></tr>
+<tr><td>County mean, Black students</td><td>All states</td><td>1049</td><td>0.896</td><td>0.912</td></tr>
+<tr><td>County mean, Black students</td><td>Alabama</td><td>131</td><td>0.882</td><td>0.901</td></tr>
+<tr><td>County mean, Black students</td><td>Georgia</td><td>252</td><td>0.914</td><td>0.916</td></tr>
+<tr><td>County mean, Black students</td><td>Louisiana</td><td>165</td><td>0.967</td><td>0.961</td></tr>
+<tr><td>County mean, Black students</td><td>Mississippi</td><td>180</td><td>0.945</td><td>0.948</td></tr>
+<tr><td>County mean, Black students</td><td>North Carolina</td><td>189</td><td>0.775</td><td>0.821</td></tr>
+<tr><td>County mean, Black students</td><td>South Carolina</td><td>132</td><td>0.893</td><td>0.901</td></tr>
+<tr><td>White-Black gap</td><td>All states</td><td>888</td><td>0.796</td><td>0.807</td></tr>
+<tr><td>White-Black gap</td><td>Alabama</td><td>105</td><td>0.769</td><td>0.735</td></tr>
+<tr><td>White-Black gap</td><td>Georgia</td><td>227</td><td>0.868</td><td>0.849</td></tr>
+<tr><td>White-Black gap</td><td>Louisiana</td><td>149</td><td>0.737</td><td>0.802</td></tr>
+<tr><td>White-Black gap</td><td>Mississippi</td><td>120</td><td>0.824</td><td>0.833</td></tr>
+<tr><td>White-Black gap</td><td>North Carolina</td><td>174</td><td>0.750</td><td>0.773</td></tr>
+<tr><td>White-Black gap</td><td>South Carolina</td><td>113</td><td>0.796</td><td>0.778</td></tr>
+</tbody></table>
+<p>Across all states the county means for all students correlate at 0.971 (Pearson) and 0.979 (Spearman) over 1,056 county-grade cells; the White-Black gaps at 0.796 and 0.807 over   888 cells. The pooled county gaps against SEDA&rsquo;s grade-averaged gaps correlate at 0.873 (Pearson) and 0.861 (Spearman) over 306 counties.</p>
+<figure class="chart card">
+<img src="figures/figure4_seda_validation.png" alt="Scatter plots of pipeline estimates against SEDA estimates, county means and White-Black gaps, with fitted lines">
+<figcaption><b>Figure 4.</b> Pipeline estimates against SEDA 6.0 estimates for the same counties, grades and school year, both standardized within state and grade. Left: county means for all students. Right: White-Black gaps. Colors identify states. Source: this run.</figcaption>
+</figure>
+<p><strong>Why levels are not compared.</strong> SEDA links its estimates to the NAEP scale and reports them in national student-level standard deviation units; this pipeline works from the single proficiency cut in the public files and standardizes within each state, grade and year. Within a state and grade the SEDA scales are affine transformations of the state-standardized mean, so the comparable quantities are the ordering and the linear association of counties, not the levels.</p>
+<p><strong>If it fails.</strong> <code>copy</code> failing on the Stanford Digital Repository URL means no connection or a changed file name; the current names are listed at <a href="https://edopportunity.org/opportunity/data/downloads/">https://edopportunity.org/opportunity/data/downloads/</a>. SEDA 6.0 ends with spring 2019 (school year 2018-19) for every geographic unit; later school years are released separately as the Educational Opportunity Trends Project, with district and state estimates and no county files, so this step has no comparator for them and stops with a message. Set <code>RUN_STEPS</code> to <code>&quot;01 02 03 05 docs&quot;</code> in that case: step 05 then writes a placeholder in place of the SEDA table, skips Figure 4, and the documents show the validation numbers as missing.</p>
+<h2><a href="#7-figures-and-tables-code05-figures-tablesdo" id="7-figures-and-tables-code05-figures-tablesdo">7. Figures and tables (code/05_figures_tables.do)</a></h2>
+<p><strong>What it does.</strong> Downloads the Census cartographic boundary file for counties (2018, 1:20,000,000), takes county names from it, draws the four figures and writes the HTML tables used by the brief and this manual.</p>
+<p><strong>The command.</strong> <code>do code/05_figures_tables.do</code> through <code>run_all.do</code> (<code>RUN_STEPS</code> <code>05</code>).</p>
+<p><strong>What to expect.</strong> In <code>output/figures</code>: <code>figure1_county_gaps</code>, <code>figure2_county_map</code> and <code>figure3_gap_poverty</code> in SVG and PNG, and <code>figure4_seda_validation</code> in PNG only (an SVG would carry the standardized SEDA values as coordinates); copies in <code>docs/figures</code>. In <code>output/tables</code>, written by this step: <code>county_gaps.csv</code> and <code>.html</code>, <code>state_summary</code>, <code>exclusions_summary</code>, <code>seda_correlations.html</code> and <code>convergence.html</code>; the esttab tables and the CSV summaries of steps 3 to 6 are written by those steps. The state summary:</p>
+<table class="dt">
+<thead><tr><th>State</th><th>Counties</th><th>Mean gap (V), precision weighted</th><th>Smallest</th><th>Largest</th><th>Child poverty</th><th>Black share of enrollment</th><th>Black tested per grade</th><th>White tested per grade</th></tr></thead>
+<tbody>
+<tr><td>Alabama</td><td>36</td><td>0.85</td><td>0.49</td><td>1.26</td><td>0.22</td><td>0.39</td><td>1386</td><td>1463</td></tr>
+<tr><td>Georgia</td><td>79</td><td>0.84</td><td>0.45</td><td>1.38</td><td>0.19</td><td>0.40</td><td>2019</td><td>1359</td></tr>
+<tr><td>Louisiana</td><td>52</td><td>0.79</td><td>0.51</td><td>0.98</td><td>0.25</td><td>0.42</td><td>862</td><td>760</td></tr>
+<tr><td>Mississippi</td><td>44</td><td>0.73</td><td>0.44</td><td>1.16</td><td>0.24</td><td>0.43</td><td>518</td><td>627</td></tr>
+<tr><td>North Carolina</td><td>58</td><td>0.94</td><td>0.55</td><td>1.15</td><td>0.19</td><td>0.30</td><td>1583</td><td>1996</td></tr>
+<tr><td>South Carolina</td><td>38</td><td>0.85</td><td>0.48</td><td>1.47</td><td>0.21</td><td>0.34</td><td>1155</td><td>1611</td></tr>
+</tbody></table>
+<p><strong>If it fails.</strong> <code>grmap not yet activated</code>: the script runs <code>grmap, activate</code>, which writes a marker file into the PERSONAL ado directory; if that directory is not writable, run the command once by hand. If the boundary file cannot be downloaded or unpacked, the script continues: Figure 2 is skipped and county names fall back to FIPS codes. To recover both, place <code>cb_2018_us_county_20m.zip</code> in <code>data/raw/shapes</code> by hand and run step 05 again. <code>MAKE_MAP</code> set to 0 only suppresses the map when the file is present.</p>
+<h2><a href="#8-changing-the-scope" id="8-changing-the-scope">8. Changing the scope</a></h2>
+<p><strong>What changes.</strong> Edit <code>STATES</code> and <code>EDF_YEAR</code> in <code>run_all.do</code>; nothing else needs to change. Running times scale with the number of states and grades for the download and with the number of county-grade cells for HETOP. From this run:</p>
+<table>
+<thead>
+<tr><th> Component </th><th> Measured </th><th> Unit cost </th></tr>
+</thead>
+<tbody>
+<tr><td> EDFacts download </td><td>  401.1 s for 6 states and 3 grades </td><td>  22.3 s per state-grade request </td></tr>
+<tr><td> CCD directory, enrollment and SAIPE </td><td>  486.8 s for 6 states </td><td>  81.1 s per state </td></tr>
+<tr><td> HETOP, main pipeline </td><td>   58.7 s for 1,065 cells </td><td>  0.06 s per cell </td></tr>
+</tbody>
+</table>
+<p>Download time per request depends mostly on the portal&rsquo;s response, not on the size of the state, so a national run of 51 states would need roughly  126 minutes of downloads with the JSON client, and HETOP for about 3,000 counties roughly    8 minutes. For a national run the portal&rsquo;s bulk CSV files are the faster route: the EDFacts district assessment and CCD district enrollment files come one per year (about 115 to 155 MB each), the CCD district directory (231 MB) and SAIPE (31 MB) files cover all years; their names are listed by the API at <code>/api/v1/api-downloads/</code> and served from <code>https://educationdata.urban.org/csv/&lt;source&gt;/&lt;file&gt;</code>, and the <code>educationdata</code> command&rsquo;s <code>csv</code> option downloads them. <code>import delimited</code> from those files and <code>keep if</code> on <code>fips</code> replaces the request loop in <code>01_download.do</code>.</p>
+<p><strong>Other school years.</strong> The portal holds EDFacts district assessments for 2009 to 2018 and for 2020 (school year 2020-21). The 2020-21 data reflect the pandemic: many districts reported nothing, participation was uneven, and a large share of cells is suppressed or not applicable. The pipeline handles the codes -1, -2 and -3 in every year (rows not reported or not applicable, code -2 or no value at all, already occur in 2018-19:  17 district rows in this run), but the sample of counties shrinks sharply in 2020-21 and no SEDA county file exists for that year, so step 6 cannot run and <code>RUN_STEPS</code> must omit <code>04</code>. Years before 2018 work as 2018 does; SEDA covers 2009 to 2019 at the county level.</p>
+<p><strong>Other states.</strong> Any set of states works; the figures cycle through a palette of seven colors, so more than seven states share colors. The county boundaries are the 2018 vintage for every year. In states with many small districts (the Midwest and Northeast) the cell-size rule excludes a larger share of students, and SEDA&rsquo;s county file lacks Black and White estimates in grade 8 for several states (Florida, Texas, Tennessee, Virginia among them), so the validation sample is smaller there.</p>
+<p><strong>Other subgroups.</strong> The pipeline is written for the White-Black comparison. Another pair of groups needs new labels in step 3, new variable names in steps 4 and 5, and the matching SEDA columns in step 6.</p>
+<h2><a href="#9-data-protection" id="9-data-protection">9. Data protection</a></h2>
+<p>The sources are public and aggregated, but they describe students from underserved populations, and the pipeline treats them with the care an institutional review board would ask for.</p>
+<ul>
+<li>Cells suppressed by the Department of Education (code -3) are dropped and never imputed or reconstructed, and no table or figure reports a proficiency value for a suppressed cell. Complementary suppression is respected: every published estimate is a county aggregate of districts with at least 50 tested students in the subgroup, and the only numbers that refer to excluded cells are the state-level counts of rows and of students tested in the exclusion accounting, which are sums of published counts and carry no proficiency value.</li>
+<li>District-grade-subgroup cells with fewer than 50 tested students never enter an aggregate, and a county is published only when its Black cell has at least 50 tested students in every grade. The smallest cell behind any estimate on the brief, in the tables or on the map therefore has at least 50 students; step 3 counts how many students this rule sets aside. Subtracting the White and Black counts of a county cell from its all-students count leaves a residual that mixes students of other race groups with the White and Black students of the district rows that the size rule or suppression excluded; every county count is a sum of district counts that EDFacts publishes, so the subtraction recovers nothing that the public district file does not already give.</li>
+<li>Subgroup estimates are published at the county level only, never for districts or schools.</li>
+<li>The raw downloads from the portal, the SEDA file and the boundary file are not versioned (<code>data/raw</code> is ignored by git), and the merged validation files that carry SEDA values are ignored too. SEDA is cited and not redistributed, as its data use agreement requires; the validation figure is published as an image, not as a vector file with the values as coordinates.</li>
+<li>Logs and derived files contain county-level aggregates only. <code>run_all.do</code> replaces the repository path and the temporary directory in the logs with placeholders, and zeroes the unused bytes of the name and label fields of every shipped <code>.dta</code> file (<code>scrubdta</code>, in code/ado), which Stata otherwise fills with fragments of its memory.</li>
+</ul>
+<h2><a href="#materials" id="materials">Materials</a></h2>
+<div class="methods">
+<h3>Files of the repository</h3>
+<div class="files">
+<div class="f"><code>run_all.do</code><div>Scope, paths, dependencies; runs the steps and builds the documents</div></div>
+<div class="f"><code>code/01_download.do</code><div>Step 2. Download from the Education Data Portal</div></div>
+<div class="f"><code>code/02_build_master.do</code><div>Step 3. County files and exclusion accounting</div></div>
+<div class="f"><code>code/03_estimate_gaps.do</code><div>Steps 4 and 5. HETOP, gaps, pooling, ladder</div></div>
+<div class="f"><code>code/04_validate_seda.do</code><div>Step 6. Validation against SEDA</div></div>
+<div class="f"><code>code/05_figures_tables.do</code><div>Step 7. Figures, map and tables</div></div>
+<div class="f"><code>code/ado/gapci.ado</code><div>The companion command; <code>help gapci</code> for its documentation</div></div>
+<div class="f"><code>code/replication.txt</code><div>Source of this manual (dyndoc)</div></div>
+<div class="f"><code>code/brief.html</code><div>Source of the brief (dyntext)</div></div>
+</div>
+</div>
+<div class="cite">To cite this repository: Rodríguez Villalta, F. H. (2026). County achievement gaps: White-Black mathematics gaps from EDFacts proficiency counts with heteroskedastic ordered probit models. Replication manual, github.com/felipehrv/county-achievement-gaps. Data: EDFacts, Common Core of Data and Small Area Income and Poverty Estimates via the Urban Institute Education Data Portal; Stanford Education Data Archive, version 6.0.</div>
+<footer>Felipe Hernán Rodríguez Villalta · 2026 · All numbers on this page are county aggregates of cells with at least 50 tested students; no suppressed cell is reported or reconstructed.</footer>
+</div>
+</body>
+</html>

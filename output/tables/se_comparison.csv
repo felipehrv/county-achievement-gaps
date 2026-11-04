@@ -1,0 +1,8 @@
+statistic,value
+cells,901
+correlation_v_direct,.9987166998823337
+median_abs_diff,.0053610919655263
+max_abs_diff,.0794847746773694
+se_ratio_p50,1.300333961217871
+se_ratio_p10,1.218064033448405
+se_ratio_p90,1.348952319472872

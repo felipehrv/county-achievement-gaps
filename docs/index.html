@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light dark;
+  --plane:#f7f7f4; --surface:#fcfcfb; --surface-2:#efeeea;
+  --ink:#0b0b0b; --ink-2:#4d4c49; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:#b9b8b0;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c7:#4a3aa7;
+  --neg:#e34948;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --wide:1100px; --measure:620px; --gutter:20px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --plane:#111110; --surface:#1a1a19; --surface-2:#242422;
+    --ink:#f4f4f1; --ink-2:#c3c2b7; --muted:#8f8e88;
+    --grid:#2c2c2a; --axis:#3d3d3a; --border:#4a4a46;
+    --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
+    --neg:#e66767;
+  }
+}
+:root[data-theme="dark"]{
+  --plane:#111110; --surface:#1a1a19; --surface-2:#242422;
+  --ink:#f4f4f1; --ink-2:#c3c2b7; --muted:#8f8e88;
+  --grid:#2c2c2a; --axis:#3d3d3a; --border:#4a4a46;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c7:#9085e9;
+  --neg:#e66767;
+}
+*{box-sizing:border-box}
+html{background:var(--plane)}
+body{margin:0; background:var(--plane); color:var(--ink); font-family:var(--serif);
+  font-size:1.125rem; line-height:1.6; -webkit-font-smoothing:antialiased}
+a{color:var(--c1)}
+a:focus-visible{outline:2px solid var(--c1); outline-offset:2px}
+.wrap{max-width:var(--wide); margin:0 auto; padding:0 var(--gutter)}
+.prose, .prose-wide{max-width:var(--measure); margin-left:auto; margin-right:auto}
+.prose p, .prose ul, .prose ol{margin:0 0 1.15em}
+.prose li{margin-bottom:.35em}
+.lead{font-size:1.2rem}
+nav.top{position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--plane) 88%, transparent);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--grid); font-family:var(--sans); font-size:.88rem}
+nav.top .wrap{display:flex; gap:18px; align-items:center; min-height:46px; flex-wrap:wrap}
+nav.top .brand{font-family:var(--serif); font-weight:700; color:var(--ink); margin-right:auto}
+nav.top .links{display:flex; gap:16px; flex-wrap:wrap}
+nav.top a{color:var(--ink-2); text-decoration:none; border-bottom:2px solid transparent; padding:12px 0}
+nav.top a:hover{border-bottom-color:var(--axis)}
+header.mast{text-align:center; padding:3.2rem 0 1.4rem}
+.kicker{font-family:var(--sans); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(1.8rem,4.2vw,3rem); line-height:1.1; letter-spacing:-.01em;
+  max-width:26ch; margin:.6rem auto .8rem; text-wrap:balance}
+.deck{font-size:clamp(1.15rem,2vw,1.4rem); line-height:1.4; color:var(--ink-2); max-width:44ch; margin:0 auto 1rem}
+.byline{font-family:var(--sans); font-size:.9rem; color:var(--muted)}
+.byline b{color:var(--ink); font-weight:600}
+h2{font-family:var(--serif); font-weight:700; font-size:clamp(1.7rem,3.4vw,2.4rem); line-height:1.15; margin:3.4rem auto 1rem; max-width:var(--measure)}
+h2 small{display:block; font-family:var(--sans); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:.4rem}
+h1 a, h2 a, h3 a{color:inherit; text-decoration:none}
+h3{font-family:var(--sans); font-size:1.02rem; font-weight:600; margin:1.6rem 0 .5rem}
+.chart h3{font-family:var(--serif); font-size:1.15rem; font-weight:700; line-height:1.3; margin:0 0 .6rem}
+figure{margin:0}
+figure.chart{margin:1.4rem auto; max-width:var(--wide)}
+.card{background:var(--surface); border:1px solid var(--grid); border-radius:8px; padding:1rem 1.1rem}
+figure.chart img{display:block; width:100%; height:auto; background:#fff; border-radius:4px}
+figcaption{font-family:var(--sans); font-size:.86rem; color:var(--muted); line-height:1.45; margin-top:.5rem}
+figcaption b{color:var(--ink-2); font-weight:600}
+.tiles{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; max-width:var(--wide); margin:1.4rem auto}
+.tile{background:var(--surface); border:1px solid var(--grid); border-radius:6px; padding:.8rem .9rem; font-family:var(--sans)}
+.tile .v{font-size:1.7rem; font-weight:600; line-height:1.1; color:var(--ink)}
+.tile .l{font-size:.84rem; color:var(--ink-2); margin-top:.2rem}
+.tile .d{font-size:.78rem; color:var(--muted)}
+.pull{border-left:3px solid var(--c2); padding-left:1rem; margin:1.6rem auto; font-size:1.25rem; line-height:1.4; color:var(--ink); max-width:var(--measure)}
+.box{background:var(--surface-2); border-left:3px solid var(--c1); border-radius:6px; padding:.9rem 1.1rem; margin:1.4rem auto;
+  font-family:var(--sans); font-size:.98rem; line-height:1.5; max-width:var(--measure)}
+.box h4{font-family:var(--serif); font-size:1.05rem; margin:0 0 .4rem}
+.box p{margin:0 0 .6em}
+.methods{font-family:var(--sans); font-size:.95rem; background:var(--surface); border:1px solid var(--grid); border-radius:8px;
+  padding:1.2rem 1.3rem; margin:1.4rem auto; max-width:var(--wide)}
+.methods h3{font-family:var(--serif); font-size:1.3rem; font-weight:700; margin:0 0 .8rem}
+.methods dl{display:grid; grid-template-columns:minmax(140px, 220px) 1fr; gap:.5rem 1.2rem; margin:0}
+.methods dt{color:var(--muted); font-weight:600}
+.methods dd{margin:0}
+.files{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-top:.8rem}
+.f{background:var(--surface-2); border:1px solid var(--grid); border-radius:6px; padding:.7rem .8rem}
+.f code{font-size:.8rem}
+.f div{font-size:.78rem; color:var(--muted); margin-top:.25rem}
+.cite{font-family:var(--sans); font-size:.9rem; background:var(--surface); border:1px solid var(--grid); border-radius:6px;
+  padding:.8rem 1rem; margin:1.4rem auto; max-width:var(--wide)}
+footer{padding:2rem 0 3rem; margin-top:2.5rem; border-top:1px solid var(--grid); color:var(--muted); font-family:var(--sans); font-size:.86rem}
+code{font-family:var(--mono); font-size:.88em; background:var(--surface-2); padding:1px 5px; border-radius:3px}
+pre{font-family:var(--mono); font-size:.8rem; line-height:1.45; background:var(--surface-2); border:1px solid var(--grid);
+  border-radius:6px; padding:.8rem 1rem; overflow-x:auto; max-width:var(--wide); margin:1rem auto}
+pre code{background:none; padding:0; font-size:inherit}
+.tbl-link{background:none; border:0; padding:0; font-family:var(--sans); font-size:.82rem; color:var(--ink-2); text-decoration:underline; cursor:pointer; margin-top:.6rem}
+.tbl-view{display:none; margin-top:.8rem; overflow-x:auto}
+.tbl-view.on{display:block}
+details.tbl{margin-top:.6rem; font-family:var(--sans)}
+details.tbl summary{font-size:.82rem; color:var(--ink-2); text-decoration:underline; cursor:pointer}
+details.tbl .scroller{overflow-x:auto; margin-top:.6rem}
+table.dt{border-collapse:collapse; width:100%; font-family:var(--sans); font-size:.84rem; font-variant-numeric:tabular-nums}
+table.dt th, table.dt td{border-bottom:1px solid var(--grid); padding:.3rem .45rem; text-align:right; vertical-align:top}
+table.dt th:first-child, table.dt td:first-child{text-align:left}
+table.dt thead th{background:var(--surface-2); color:var(--ink-2); font-weight:600; text-align:right}
+table.dt thead th:first-child{text-align:left}
+.tbl-title{font-family:var(--sans); font-size:.86rem; color:var(--ink-2); font-weight:600; margin:0 0 .4rem}
+table:not(.dt){border-collapse:collapse; font-family:var(--sans); font-size:.9rem; margin:1rem auto; max-width:var(--wide)}
+table:not(.dt) th, table:not(.dt) td{border-bottom:1px solid var(--grid); padding:.3rem .6rem; text-align:left; vertical-align:top}
+table:not(.dt) th{background:var(--surface-2); color:var(--ink-2); font-weight:600}
+.manual h1{text-align:left; margin-left:0; max-width:none}
+.manual h2{max-width:none; margin-left:0}
+.manual > p, .manual > ul, .manual > ol{max-width:var(--measure); margin-left:auto; margin-right:auto}
+.manual .step{background:var(--surface); border:1px solid var(--grid); border-radius:8px; padding:1rem 1.2rem; margin:1.2rem auto; max-width:var(--wide); font-family:var(--sans); font-size:.95rem}
+.manual .step h4{margin:.2rem 0 .3rem; font-family:var(--serif); font-size:1.05rem}
+@media (max-width:820px){ body{font-size:1.05rem} .methods dl{grid-template-columns:1fr}
+  nav.top{position:static} nav.top .wrap{gap:10px 14px; padding-top:8px; padding-bottom:8px} nav.top a{padding:2px 0} }
+@media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+@media print{ nav.top{display:none} .tbl-view{display:block} }
+</style>
+<title>County achievement gaps</title>
+<meta name="description" content="White-Black mathematics achievement gaps for counties in six Southern states, school year 2018-19, recovered from EDFacts proficiency counts with heteroskedastic ordered probit models and validated against the Stanford Education Data Archive.">
+</head>
+<body>
+
+<nav class="top" aria-label="Sections">
+<div class="wrap">
+<span class="brand">County achievement gaps</span>
+<div class="links">
+<a href="#problem">The problem</a>
+<a href="#counties">The counties</a>
+<a href="#context">Context</a>
+<a href="#validation">Validation</a>
+<a href="#supports">What it supports</a>
+<a href="#methods">Methods</a>
+<a href="replication.html">Manual</a>
+<a href="https://github.com/felipehrv/county-achievement-gaps">Code</a>
+</div>
+</div>
+</nav>
+
+<header class="mast wrap">
+<div class="kicker">A brief of the research · Six Southern states, school year 2018-19</div>
+<h1>County achievement gaps recovered from proficiency counts</h1>
+<p class="deck">Districts report how many students took the state test and what share met the standard, and every state sets its own test. This page recovers from that thin record the gap between White and Black students' average mathematics achievement in 307 counties, and checks the result against an independent archive.</p>
+<div class="byline">By <b>Felipe Hernán Rodríguez Villalta</b>, 2026 · EDFacts, Common Core of Data and SAIPE through the Urban Institute Education Data Portal · Stata and Mata; validated against SEDA 6.0</div>
+</header>
+
+<main class="wrap">
+
+<div class="prose">
+<p><span class="lead">The federal record of state testing is public, complete and coarse. For every district, grade and student group, EDFacts publishes the number of students tested and the share who scored at or above the state's proficient standard, in ranges when the group is small. It publishes no scores, and each state tests with its own instrument against its own standard.</span> A difference of ten percentage points in proficiency means one thing in a state with a demanding standard and another in a state with a lenient one, and the same difference means different things at the top and at the bottom of the distribution (Ho 2008).</p>
+<p>This page reports what can nonetheless be learned from that record about the gap between White and Black students in mathematics, for the counties of Alabama, Georgia, Louisiana, Mississippi, North Carolina and South Carolina in school year 2018-19. The gaps are expressed in standard deviation units of student achievement, a metric that does not depend on the state's test or standard, so they can be placed side by side across states. The page describes differences in measured achievement between groups of children who go to school in very different conditions. It does not attribute those differences to the children, and it does not identify their causes.</p>
+</div>
+
+<div class="tiles">
+<div class="tile"><div class="v">307</div><div class="l">counties with an estimate</div><div class="d">of 355 with a district of at least 50 Black test takers in grades 4, 6 and 8</div></div>
+<div class="tile"><div class="v">  448,869</div><div class="l">Black students tested</div><div class="d">and   510,121 White students in the 355 sample counties, three grades together</div></div>
+<div class="tile"><div class="v">0.77</div><div class="l">standard deviations, pooled gap</div><div class="d">median county 0.76; 307 of 307 HETOP intervals above zero</div></div>
+<div class="tile"><div class="v">0.97</div><div class="l">correlation with SEDA</div><div class="d">county means, 1,056 county-grade cells, within states</div></div>
+</div>
+
+<h2 class="chap" id="problem"><small>Chapter 1</small>Counts by category, not scores</h2>
+<div class="prose">
+<p>States report test results to the federal government as counts of students in ordered performance categories. The categories carry real information about where a group's scores lie, but the information is coarsened: a student at the bottom of "proficient" and one at the top are the same student in the count. Ho and Reardon (2012) showed how to estimate the gap between two groups from such counts, and Reardon, Shear, Castellano and Ho (2017) how to recover each group's mean and standard deviation. Their model, a heteroskedastic ordered probit, treats the categories as cuts through a continuous distribution and estimates where each group's distribution sits relative to cut scores shared by the groups in the fit, here the three groups of a county and grade.</p>
+<p>The public files add a second coarsening. They publish one cut, the proficient standard, not the full set of categories. The pipeline behind this page therefore reconstructs four categories from each group's proficiency rate under two stated assumptions: scores within a group are normally distributed with the same spread in every group, and the state's cut scores sit at fixed positions around the proficient standard. The assumptions fix the spread; what the data identify is where each group sits relative to the standard, and so the distance between groups. The gap is summarized as Ho's (2009) V, which is unchanged by any increasing transformation of a state's scale and which, under the normality assumed here, equals the difference in means divided by the pooled standard deviation.</p>
+<p>The gap is estimated for every county and grade, then the three grades of a county are pooled into one estimate with weights that favor the more precise grades, following the meta-analytic model of Hedges and Vevea (1998). District cells with fewer than 50 tested students are set aside before aggregation, because the published rates for small groups are too coarse; this rule excludes 5.4% of the Black students tested in the six states. Counties then enter only when at least 50 Black students were tested in each grade, which keeps 355 of the 518 counties and a further 0.5% of the remaining Black test takers outside the sample. In 48 of those counties no district had 50 White test takers in any grade, so a gap is estimated for 307 counties.</p>
+</div>
+
+<h2 class="chap" id="counties"><small>Chapter 2</small>What the counties show</h2>
+<div class="prose">
+<p>In every one of the 307 counties, White students' average exceeds Black students' average. The HETOP interval lies above zero in 307 counties and the wider binomial interval in 307. The pooled gap across counties is 0.77 standard deviations. The median county has a gap of 0.76, and the middle 80% of counties lie between 0.58 and 0.95. For scale, a gap of 0.8 standard deviations means that the median Black student scores near the 21st percentile of White students in the same county.</p>
+<p>The four largest gaps are in Charleston (South Carolina) at 1.47, Fulton (Georgia) at 1.38, DeKalb (Georgia) at 1.36 and Jefferson (Alabama) at 1.26; the three smallest in Panola (Mississippi) at 0.44, Clayton (Georgia) at 0.45 and Long (Georgia) at 0.45. The largest gaps are in the largest metropolitan counties of their states: among the ten counties with the most test takers, 9 have gaps above the median county. The smallest gaps occur in counties of every size. The gap changes little across grades: the pooling model's slope on grade is -0.004 standard deviations per grade.</p>
+</div>
+
+<figure class="chart card" id="fig-gaps">
+<h3>White students' average exceeds Black students' average in every county, by 0.4 to 1.5 standard deviations</h3>
+<img src="figures/figure1_county_gaps.svg" alt="Dot plot of the White-Black gap for every county, ordered from smallest to largest, with 95 percent intervals and a line at the pooled estimate">
+<figcaption><b>Figure 1.</b> Pooled White-Black mathematics gap (V) for each county, grades 4, 6 and 8 together, ordered from smallest to largest; colors identify states. Thick bars are 95% intervals from the HETOP standard errors; thin bars extend them to intervals from the binomial standard errors of the published rates, which are about  30% wider. The horizontal line is the pooled estimate of the random-intercept model at grade 6. Source: this pipeline, from EDFacts via the Education Data Portal.</figcaption>
+<details class="tbl"><summary>Show the table</summary><div class="scroller">
+<table class="dt">
+<thead><tr><th>State</th><th>County</th><th>Gap (V)</th><th>95% low, HETOP</th><th>95% high, HETOP</th><th>95% low, binomial</th><th>95% high, binomial</th><th>Black tested per grade</th><th>White tested per grade</th><th>Child poverty</th><th>Black share</th><th>Districts</th><th>FIPS</th></tr></thead>
+<tbody>
+<tr><td>Alabama</td><td>Jefferson</td><td>1.26</td><td>1.23</td><td>1.29</td><td>1.23</td><td>1.30</td><td>3757</td><td>2991</td><td>0.20</td><td>0.49</td><td>12</td><td>1073</td></tr>
+<tr><td>Alabama</td><td>Dale</td><td>0.97</td><td>0.82</td><td>1.12</td><td>0.78</td><td>1.16</td><td>97</td><td>234</td><td>0.26</td><td>0.31</td><td>3</td><td>1045</td></tr>
+<tr><td>Alabama</td><td>Montgomery</td><td>0.96</td><td>0.88</td><td>1.04</td><td>0.86</td><td>1.05</td><td>1748</td><td>276</td><td>0.31</td><td>0.76</td><td>2</td><td>1101</td></tr>
+<tr><td>Alabama</td><td>Baldwin</td><td>0.94</td><td>0.86</td><td>1.02</td><td>0.84</td><td>1.03</td><td>285</td><td>1787</td><td>0.13</td><td>0.12</td><td>1</td><td>1003</td></tr>
+<tr><td>Alabama</td><td>Madison</td><td>0.92</td><td>0.88</td><td>0.96</td><td>0.86</td><td>0.97</td><td>1185</td><td>2102</td><td>0.15</td><td>0.29</td><td>3</td><td>1089</td></tr>
+<tr><td>Alabama</td><td>Tuscaloosa</td><td>0.90</td><td>0.85</td><td>0.95</td><td>0.84</td><td>0.97</td><td>965</td><td>1039</td><td>0.20</td><td>0.43</td><td>2</td><td>1125</td></tr>
+<tr><td>Alabama</td><td>Houston</td><td>0.90</td><td>0.83</td><td>0.97</td><td>0.81</td><td>0.99</td><td>478</td><td>593</td><td>0.21</td><td>0.41</td><td>2</td><td>1069</td></tr>
+<tr><td>Alabama</td><td>Clarke</td><td>0.83</td><td>0.64</td><td>1.02</td><td>0.59</td><td>1.07</td><td>128</td><td>54</td><td>0.31</td><td>0.61</td><td>2</td><td>1025</td></tr>
+<tr><td>Alabama</td><td>Marengo</td><td>0.81</td><td>0.64</td><td>0.99</td><td>0.58</td><td>1.04</td><td>117</td><td>71</td><td>0.33</td><td>0.59</td><td>3</td><td>1091</td></tr>
+<tr><td>Alabama</td><td>Butler</td><td>0.79</td><td>0.64</td><td>0.95</td><td>0.58</td><td>1.01</td><td>142</td><td>84</td><td>0.35</td><td>0.63</td><td>1</td><td>1013</td></tr>
+<tr><td>Alabama</td><td>Tallapoosa</td><td>0.74</td><td>0.62</td><td>0.86</td><td>0.58</td><td>0.90</td><td>145</td><td>278</td><td>0.33</td><td>0.35</td><td>2</td><td>1123</td></tr>
+<tr><td>Alabama</td><td>Henry</td><td>0.74</td><td>0.54</td><td>0.93</td><td>0.48</td><td>0.99</td><td>60</td><td>120</td><td>0.24</td><td>0.31</td><td>1</td><td>1067</td></tr>
+<tr><td>Alabama</td><td>Chambers</td><td>0.73</td><td>0.59</td><td>0.86</td><td>0.54</td><td>0.91</td><td>154</td><td>122</td><td>0.30</td><td>0.55</td><td>2</td><td>1017</td></tr>
+<tr><td>Alabama</td><td>Shelby</td><td>0.71</td><td>0.64</td><td>0.77</td><td>0.63</td><td>0.79</td><td>381</td><td>1520</td><td>0.09</td><td>0.17</td><td>3</td><td>1117</td></tr>
+<tr><td>Alabama</td><td>Talladega</td><td>0.70</td><td>0.62</td><td>0.78</td><td>0.60</td><td>0.81</td><td>347</td><td>467</td><td>0.24</td><td>0.40</td><td>3</td><td>1121</td></tr>
+<tr><td>Alabama</td><td>Escambia</td><td>0.70</td><td>0.58</td><td>0.82</td><td>0.54</td><td>0.86</td><td>129</td><td>227</td><td>0.31</td><td>0.39</td><td>2</td><td>1053</td></tr>
+<tr><td>Alabama</td><td>Hale</td><td>0.70</td><td>0.48</td><td>0.92</td><td>0.41</td><td>0.99</td><td>124</td><td>57</td><td>0.34</td><td>0.69</td><td>1</td><td>1065</td></tr>
+<tr><td>Alabama</td><td>Morgan</td><td>0.70</td><td>0.61</td><td>0.79</td><td>0.59</td><td>0.81</td><td>207</td><td>923</td><td>0.18</td><td>0.15</td><td>3</td><td>1103</td></tr>
+<tr><td>Alabama</td><td>Limestone</td><td>0.69</td><td>0.57</td><td>0.81</td><td>0.54</td><td>0.84</td><td>119</td><td>785</td><td>0.16</td><td>0.13</td><td>2</td><td>1083</td></tr>
+<tr><td>Alabama</td><td>Coffee</td><td>0.68</td><td>0.56</td><td>0.80</td><td>0.53</td><td>0.83</td><td>116</td><td>455</td><td>0.20</td><td>0.19</td><td>3</td><td>1031</td></tr>
+<tr><td>Alabama</td><td>Lee</td><td>0.68</td><td>0.62</td><td>0.74</td><td>0.60</td><td>0.76</td><td>542</td><td>981</td><td>0.19</td><td>0.29</td><td>3</td><td>1081</td></tr>
+<tr><td>Alabama</td><td>Chilton</td><td>0.67</td><td>0.50</td><td>0.84</td><td>0.46</td><td>0.88</td><td>65</td><td>390</td><td>0.22</td><td>0.11</td><td>1</td><td>1021</td></tr>
+<tr><td>Alabama</td><td>Dallas</td><td>0.67</td><td>0.37</td><td>0.97</td><td>0.30</td><td>1.04</td><td>427</td><td>50</td><td>0.44</td><td>0.87</td><td>2</td><td>1047</td></tr>
+<tr><td>Alabama</td><td>Calhoun</td><td>0.66</td><td>0.59</td><td>0.74</td><td>0.57</td><td>0.76</td><td>321</td><td>845</td><td>0.23</td><td>0.27</td><td>5</td><td>1015</td></tr>
+<tr><td>Alabama</td><td>Mobile</td><td>0.66</td><td>0.62</td><td>0.69</td><td>0.61</td><td>0.70</td><td>2063</td><td>1887</td><td>0.30</td><td>0.48</td><td>5</td><td>1097</td></tr>
+<tr><td>Alabama</td><td>Autauga</td><td>0.66</td><td>0.56</td><td>0.75</td><td>0.53</td><td>0.78</td><td>201</td><td>463</td><td>0.19</td><td>0.26</td><td>1</td><td>1001</td></tr>
+<tr><td>Alabama</td><td>Russell</td><td>0.63</td><td>0.54</td><td>0.71</td><td>0.52</td><td>0.74</td><td>428</td><td>265</td><td>0.30</td><td>0.51</td><td>2</td><td>1113</td></tr>
+<tr><td>Alabama</td><td>Lauderdale</td><td>0.62</td><td>0.49</td><td>0.74</td><td>0.47</td><td>0.77</td><td>104</td><td>720</td><td>0.16</td><td>0.13</td><td>2</td><td>1077</td></tr>
+<tr><td>Alabama</td><td>Barbour</td><td>0.61</td><td>0.49</td><td>0.73</td><td>0.45</td><td>0.77</td><td>197</td><td>257</td><td>0.36</td><td>0.46</td><td>2</td><td>1005</td></tr>
+<tr><td>Alabama</td><td>Washington</td><td>0.61</td><td>0.43</td><td>0.79</td><td>0.37</td><td>0.85</td><td>57</td><td>125</td><td>0.24</td><td>0.25</td><td>1</td><td>1129</td></tr>
+<tr><td>Alabama</td><td>Elmore</td><td>0.61</td><td>0.52</td><td>0.69</td><td>0.50</td><td>0.72</td><td>244</td><td>678</td><td>0.16</td><td>0.27</td><td>2</td><td>1051</td></tr>
+<tr><td>Alabama</td><td>Pickens</td><td>0.58</td><td>0.41</td><td>0.76</td><td>0.34</td><td>0.82</td><td>105</td><td>76</td><td>0.29</td><td>0.58</td><td>1</td><td>1107</td></tr>
+<tr><td>Alabama</td><td>Etowah</td><td>0.56</td><td>0.46</td><td>0.66</td><td>0.43</td><td>0.68</td><td>171</td><td>778</td><td>0.24</td><td>0.19</td><td>3</td><td>1055</td></tr>
+<tr><td>Alabama</td><td>St. Clair</td><td>0.55</td><td>0.40</td><td>0.69</td><td>0.37</td><td>0.72</td><td>72</td><td>816</td><td>0.14</td><td>0.10</td><td>2</td><td>1115</td></tr>
+<tr><td>Alabama</td><td>Pike</td><td>0.54</td><td>0.38</td><td>0.69</td><td>0.34</td><td>0.73</td><td>182</td><td>74</td><td>0.29</td><td>0.55</td><td>2</td><td>1109</td></tr>
+<tr><td>Alabama</td><td>Monroe</td><td>0.49</td><td>0.35</td><td>0.64</td><td>0.30</td><td>0.69</td><td>126</td><td>110</td><td>0.30</td><td>0.51</td><td>1</td><td>1099</td></tr>
+<tr><td>Georgia</td><td>Fulton</td><td>1.38</td><td>1.34</td><td>1.41</td><td>1.34</td><td>1.41</td><td>5950</td><td>2500</td><td>0.18</td><td>0.53</td><td>10</td><td>13121</td></tr>
+<tr><td>Georgia</td><td>DeKalb</td><td>1.36</td><td>1.31</td><td>1.40</td><td>1.30</td><td>1.41</td><td>4646</td><td>1086</td><td>0.22</td><td>0.59</td><td>5</td><td>13089</td></tr>
+<tr><td>Georgia</td><td>Clarke</td><td>1.15</td><td>1.04</td><td>1.26</td><td>1.02</td><td>1.28</td><td>488</td><td>185</td><td>0.28</td><td>0.48</td><td>1</td><td>13059</td></tr>
+<tr><td>Georgia</td><td>Lowndes</td><td>1.09</td><td>1.02</td><td>1.15</td><td>1.00</td><td>1.17</td><td>684</td><td>595</td><td>0.32</td><td>0.45</td><td>3</td><td>13185</td></tr>
+<tr><td>Georgia</td><td>Greene</td><td>1.07</td><td>0.84</td><td>1.29</td><td>0.80</td><td>1.34</td><td>82</td><td>73</td><td>0.33</td><td>0.45</td><td>1</td><td>13133</td></tr>
+<tr><td>Georgia</td><td>Peach</td><td>1.00</td><td>0.83</td><td>1.17</td><td>0.79</td><td>1.21</td><td>144</td><td>84</td><td>0.30</td><td>0.51</td><td>1</td><td>13225</td></tr>
+<tr><td>Georgia</td><td>Toombs</td><td>1.00</td><td>0.80</td><td>1.20</td><td>0.76</td><td>1.24</td><td>96</td><td>183</td><td>0.39</td><td>0.33</td><td>2</td><td>13279</td></tr>
+<tr><td>Georgia</td><td>Glynn</td><td>0.97</td><td>0.88</td><td>1.05</td><td>0.86</td><td>1.08</td><td>347</td><td>451</td><td>0.24</td><td>0.35</td><td>1</td><td>13127</td></tr>
+<tr><td>Georgia</td><td>Chatham</td><td>0.94</td><td>0.89</td><td>0.99</td><td>0.87</td><td>1.01</td><td>1671</td><td>658</td><td>0.19</td><td>0.57</td><td>1</td><td>13051</td></tr>
+<tr><td>Georgia</td><td>Muscogee</td><td>0.93</td><td>0.87</td><td>0.99</td><td>0.86</td><td>1.01</td><td>1394</td><td>539</td><td>0.27</td><td>0.58</td><td>1</td><td>13215</td></tr>
+<tr><td>Georgia</td><td>Cobb</td><td>0.93</td><td>0.90</td><td>0.96</td><td>0.89</td><td>0.97</td><td>2891</td><td>3196</td><td>0.13</td><td>0.31</td><td>3</td><td>13067</td></tr>
+<tr><td>Georgia</td><td>Bibb</td><td>0.93</td><td>0.85</td><td>1.01</td><td>0.83</td><td>1.02</td><td>1271</td><td>305</td><td>0.35</td><td>0.73</td><td>3</td><td>13021</td></tr>
+<tr><td>Georgia</td><td>Thomas</td><td>0.92</td><td>0.83</td><td>1.02</td><td>0.79</td><td>1.06</td><td>279</td><td>316</td><td>0.27</td><td>0.42</td><td>2</td><td>13275</td></tr>
+<tr><td>Georgia</td><td>Hall</td><td>0.91</td><td>0.81</td><td>1.01</td><td>0.79</td><td>1.03</td><td>211</td><td>1041</td><td>0.19</td><td>0.08</td><td>2</td><td>13139</td></tr>
+<tr><td>Georgia</td><td>Emanuel</td><td>0.90</td><td>0.75</td><td>1.04</td><td>0.71</td><td>1.09</td><td>136</td><td>151</td><td>0.33</td><td>0.41</td><td>1</td><td>13107</td></tr>
+<tr><td>Georgia</td><td>Crisp</td><td>0.90</td><td>0.74</td><td>1.05</td><td>0.70</td><td>1.10</td><td>174</td><td>93</td><td>0.40</td><td>0.58</td><td>1</td><td>13081</td></tr>
+<tr><td>Georgia</td><td>Mitchell</td><td>0.90</td><td>0.69</td><td>1.11</td><td>0.63</td><td>1.16</td><td>160</td><td>83</td><td>0.36</td><td>0.58</td><td>2</td><td>13205</td></tr>
+<tr><td>Georgia</td><td>Bulloch</td><td>0.89</td><td>0.80</td><td>0.98</td><td>0.78</td><td>1.01</td><td>314</td><td>386</td><td>0.24</td><td>0.37</td><td>2</td><td>13031</td></tr>
+<tr><td>Georgia</td><td>Coweta</td><td>0.87</td><td>0.80</td><td>0.94</td><td>0.78</td><td>0.96</td><td>395</td><td>1011</td><td>0.13</td><td>0.23</td><td>3</td><td>13077</td></tr>
+<tr><td>Georgia</td><td>Morgan</td><td>0.86</td><td>0.69</td><td>1.04</td><td>0.64</td><td>1.09</td><td>64</td><td>159</td><td>0.19</td><td>0.26</td><td>1</td><td>13211</td></tr>
+<tr><td>Georgia</td><td>McDuffie</td><td>0.86</td><td>0.71</td><td>1.02</td><td>0.66</td><td>1.07</td><td>170</td><td>100</td><td>0.30</td><td>0.56</td><td>1</td><td>13189</td></tr>
+<tr><td>Georgia</td><td>Colquitt</td><td>0.86</td><td>0.75</td><td>0.98</td><td>0.71</td><td>1.01</td><td>181</td><td>292</td><td>0.33</td><td>0.26</td><td>1</td><td>13071</td></tr>
+<tr><td>Georgia</td><td>Grady</td><td>0.85</td><td>0.68</td><td>1.01</td><td>0.63</td><td>1.06</td><td>113</td><td>140</td><td>0.30</td><td>0.33</td><td>1</td><td>13131</td></tr>
+<tr><td>Georgia</td><td>Troup</td><td>0.84</td><td>0.76</td><td>0.93</td><td>0.73</td><td>0.95</td><td>407</td><td>381</td><td>0.26</td><td>0.43</td><td>1</td><td>13285</td></tr>
+<tr><td>Georgia</td><td>Monroe</td><td>0.83</td><td>0.68</td><td>0.99</td><td>0.63</td><td>1.04</td><td>74</td><td>194</td><td>0.16</td><td>0.24</td><td>1</td><td>13207</td></tr>
+<tr><td>Georgia</td><td>Richmond</td><td>0.82</td><td>0.76</td><td>0.89</td><td>0.74</td><td>0.91</td><td>1685</td><td>405</td><td>0.31</td><td>0.73</td><td>2</td><td>13245</td></tr>
+<tr><td>Georgia</td><td>Laurens</td><td>0.81</td><td>0.72</td><td>0.90</td><td>0.69</td><td>0.93</td><td>292</td><td>314</td><td>0.32</td><td>0.46</td><td>2</td><td>13175</td></tr>
+<tr><td>Georgia</td><td>Houston</td><td>0.81</td><td>0.76</td><td>0.86</td><td>0.74</td><td>0.87</td><td>907</td><td>959</td><td>0.17</td><td>0.38</td><td>1</td><td>13153</td></tr>
+<tr><td>Georgia</td><td>Columbia</td><td>0.80</td><td>0.74</td><td>0.86</td><td>0.72</td><td>0.88</td><td>466</td><td>1204</td><td>0.10</td><td>0.21</td><td>2</td><td>13073</td></tr>
+<tr><td>Georgia</td><td>Ware</td><td>0.80</td><td>0.68</td><td>0.91</td><td>0.65</td><td>0.95</td><td>174</td><td>228</td><td>0.32</td><td>0.37</td><td>1</td><td>13299</td></tr>
+<tr><td>Georgia</td><td>Ben Hill</td><td>0.79</td><td>0.61</td><td>0.97</td><td>0.55</td><td>1.02</td><td>107</td><td>94</td><td>0.37</td><td>0.43</td><td>1</td><td>13017</td></tr>
+<tr><td>Georgia</td><td>Tift</td><td>0.79</td><td>0.67</td><td>0.90</td><td>0.64</td><td>0.94</td><td>210</td><td>229</td><td>0.30</td><td>0.35</td><td>1</td><td>13277</td></tr>
+<tr><td>Georgia</td><td>Bryan</td><td>0.79</td><td>0.66</td><td>0.91</td><td>0.63</td><td>0.94</td><td>124</td><td>494</td><td>0.11</td><td>0.16</td><td>1</td><td>13029</td></tr>
+<tr><td>Georgia</td><td>Floyd</td><td>0.79</td><td>0.69</td><td>0.89</td><td>0.66</td><td>0.91</td><td>194</td><td>648</td><td>0.29</td><td>0.18</td><td>3</td><td>13115</td></tr>
+<tr><td>Georgia</td><td>Coffee</td><td>0.78</td><td>0.66</td><td>0.89</td><td>0.63</td><td>0.93</td><td>172</td><td>250</td><td>0.33</td><td>0.31</td><td>1</td><td>13069</td></tr>
+<tr><td>Georgia</td><td>Sumter</td><td>0.78</td><td>0.46</td><td>1.10</td><td>0.39</td><td>1.17</td><td>250</td><td>51</td><td>0.39</td><td>0.71</td><td>1</td><td>13261</td></tr>
+<tr><td>Georgia</td><td>Camden</td><td>0.78</td><td>0.67</td><td>0.89</td><td>0.64</td><td>0.92</td><td>149</td><td>432</td><td>0.19</td><td>0.22</td><td>1</td><td>13039</td></tr>
+<tr><td>Georgia</td><td>Washington</td><td>0.78</td><td>0.61</td><td>0.94</td><td>0.56</td><td>0.99</td><td>159</td><td>68</td><td>0.40</td><td>0.64</td><td>1</td><td>13303</td></tr>
+<tr><td>Georgia</td><td>Dougherty</td><td>0.77</td><td>0.53</td><td>1.01</td><td>0.49</td><td>1.05</td><td>1053</td><td>85</td><td>0.38</td><td>0.89</td><td>1</td><td>13095</td></tr>
+<tr><td>Georgia</td><td>Brooks</td><td>0.77</td><td>0.42</td><td>1.12</td><td>0.30</td><td>1.24</td><td>93</td><td>58</td><td>0.33</td><td>0.54</td><td>1</td><td>13027</td></tr>
+<tr><td>Georgia</td><td>Cook</td><td>0.77</td><td>0.59</td><td>0.94</td><td>0.54</td><td>1.00</td><td>80</td><td>115</td><td>0.32</td><td>0.34</td><td>1</td><td>13075</td></tr>
+<tr><td>Georgia</td><td>Hart</td><td>0.76</td><td>0.58</td><td>0.94</td><td>0.53</td><td>1.00</td><td>59</td><td>172</td><td>0.23</td><td>0.23</td><td>1</td><td>13147</td></tr>
+<tr><td>Georgia</td><td>Dodge</td><td>0.76</td><td>0.59</td><td>0.93</td><td>0.53</td><td>0.99</td><td>71</td><td>136</td><td>0.30</td><td>0.36</td><td>1</td><td>13091</td></tr>
+<tr><td>Georgia</td><td>Carroll</td><td>0.76</td><td>0.68</td><td>0.83</td><td>0.66</td><td>0.86</td><td>319</td><td>892</td><td>0.22</td><td>0.21</td><td>2</td><td>13045</td></tr>
+<tr><td>Georgia</td><td>Wayne</td><td>0.74</td><td>0.60</td><td>0.88</td><td>0.55</td><td>0.92</td><td>99</td><td>267</td><td>0.27</td><td>0.23</td><td>1</td><td>13305</td></tr>
+<tr><td>Georgia</td><td>Burke</td><td>0.73</td><td>0.59</td><td>0.88</td><td>0.54</td><td>0.92</td><td>190</td><td>88</td><td>0.30</td><td>0.64</td><td>1</td><td>13033</td></tr>
+<tr><td>Georgia</td><td>Fayette</td><td>0.73</td><td>0.66</td><td>0.80</td><td>0.64</td><td>0.82</td><td>460</td><td>688</td><td>0.06</td><td>0.28</td><td>2</td><td>13113</td></tr>
+<tr><td>Georgia</td><td>Baldwin</td><td>0.72</td><td>0.57</td><td>0.88</td><td>0.52</td><td>0.92</td><td>268</td><td>88</td><td>0.29</td><td>0.67</td><td>1</td><td>13009</td></tr>
+<tr><td>Georgia</td><td>Effingham</td><td>0.72</td><td>0.61</td><td>0.82</td><td>0.59</td><td>0.85</td><td>153</td><td>675</td><td>0.11</td><td>0.15</td><td>1</td><td>13103</td></tr>
+<tr><td>Georgia</td><td>Gwinnett</td><td>0.72</td><td>0.69</td><td>0.74</td><td>0.68</td><td>0.75</td><td>4649</td><td>3253</td><td>0.12</td><td>0.31</td><td>5</td><td>13135</td></tr>
+<tr><td>Georgia</td><td>Lee</td><td>0.71</td><td>0.58</td><td>0.84</td><td>0.55</td><td>0.88</td><td>102</td><td>338</td><td>0.15</td><td>0.23</td><td>1</td><td>13177</td></tr>
+<tr><td>Georgia</td><td>Decatur</td><td>0.71</td><td>0.58</td><td>0.85</td><td>0.53</td><td>0.89</td><td>170</td><td>135</td><td>0.33</td><td>0.49</td><td>1</td><td>13087</td></tr>
+<tr><td>Georgia</td><td>Tattnall</td><td>0.70</td><td>0.53</td><td>0.88</td><td>0.48</td><td>0.93</td><td>69</td><td>141</td><td>0.31</td><td>0.25</td><td>1</td><td>13267</td></tr>
+<tr><td>Georgia</td><td>Screven</td><td>0.70</td><td>0.53</td><td>0.88</td><td>0.47</td><td>0.94</td><td>81</td><td>80</td><td>0.43</td><td>0.47</td><td>1</td><td>13251</td></tr>
+<tr><td>Georgia</td><td>Appling</td><td>0.70</td><td>0.52</td><td>0.88</td><td>0.47</td><td>0.93</td><td>64</td><td>149</td><td>0.31</td><td>0.22</td><td>1</td><td>13001</td></tr>
+<tr><td>Georgia</td><td>Spalding</td><td>0.70</td><td>0.61</td><td>0.79</td><td>0.58</td><td>0.82</td><td>371</td><td>287</td><td>0.27</td><td>0.48</td><td>1</td><td>13255</td></tr>
+<tr><td>Georgia</td><td>Elbert</td><td>0.70</td><td>0.53</td><td>0.86</td><td>0.47</td><td>0.92</td><td>83</td><td>116</td><td>0.30</td><td>0.36</td><td>1</td><td>13105</td></tr>
+<tr><td>Georgia</td><td>Harris</td><td>0.70</td><td>0.53</td><td>0.86</td><td>0.49</td><td>0.90</td><td>62</td><td>311</td><td>0.12</td><td>0.16</td><td>1</td><td>13145</td></tr>
+<tr><td>Georgia</td><td>Worth</td><td>0.69</td><td>0.53</td><td>0.85</td><td>0.48</td><td>0.91</td><td>87</td><td>132</td><td>0.34</td><td>0.34</td><td>1</td><td>13321</td></tr>
+<tr><td>Georgia</td><td>Cherokee</td><td>0.69</td><td>0.61</td><td>0.77</td><td>0.59</td><td>0.79</td><td>238</td><td>2206</td><td>0.09</td><td>0.08</td><td>2</td><td>13057</td></tr>
+<tr><td>Georgia</td><td>Walton</td><td>0.66</td><td>0.58</td><td>0.75</td><td>0.55</td><td>0.77</td><td>244</td><td>754</td><td>0.17</td><td>0.23</td><td>2</td><td>13297</td></tr>
+<tr><td>Georgia</td><td>Polk</td><td>0.65</td><td>0.50</td><td>0.79</td><td>0.47</td><td>0.83</td><td>94</td><td>339</td><td>0.26</td><td>0.14</td><td>1</td><td>13233</td></tr>
+<tr><td>Georgia</td><td>Putnam</td><td>0.64</td><td>0.43</td><td>0.84</td><td>0.37</td><td>0.91</td><td>54</td><td>65</td><td>0.27</td><td>0.36</td><td>1</td><td>13237</td></tr>
+<tr><td>Georgia</td><td>Upson</td><td>0.64</td><td>0.50</td><td>0.77</td><td>0.45</td><td>0.82</td><td>111</td><td>155</td><td>0.33</td><td>0.36</td><td>1</td><td>13293</td></tr>
+<tr><td>Georgia</td><td>Meriwether</td><td>0.63</td><td>0.45</td><td>0.81</td><td>0.39</td><td>0.87</td><td>100</td><td>63</td><td>0.38</td><td>0.58</td><td>1</td><td>13199</td></tr>
+<tr><td>Georgia</td><td>Butts</td><td>0.63</td><td>0.47</td><td>0.79</td><td>0.41</td><td>0.85</td><td>90</td><td>144</td><td>0.30</td><td>0.33</td><td>1</td><td>13035</td></tr>
+<tr><td>Georgia</td><td>Liberty</td><td>0.62</td><td>0.52</td><td>0.73</td><td>0.49</td><td>0.76</td><td>405</td><td>165</td><td>0.23</td><td>0.53</td><td>1</td><td>13179</td></tr>
+<tr><td>Georgia</td><td>Henry</td><td>0.61</td><td>0.56</td><td>0.66</td><td>0.55</td><td>0.67</td><td>1872</td><td>853</td><td>0.12</td><td>0.55</td><td>1</td><td>13151</td></tr>
+<tr><td>Georgia</td><td>Barrow</td><td>0.60</td><td>0.49</td><td>0.70</td><td>0.46</td><td>0.73</td><td>155</td><td>616</td><td>0.14</td><td>0.13</td><td>1</td><td>13013</td></tr>
+<tr><td>Georgia</td><td>Jones</td><td>0.59</td><td>0.46</td><td>0.72</td><td>0.42</td><td>0.77</td><td>109</td><td>271</td><td>0.18</td><td>0.25</td><td>1</td><td>13169</td></tr>
+<tr><td>Georgia</td><td>Forsyth</td><td>0.58</td><td>0.48</td><td>0.68</td><td>0.46</td><td>0.70</td><td>167</td><td>2104</td><td>0.05</td><td>0.04</td><td>1</td><td>13117</td></tr>
+<tr><td>Georgia</td><td>Bartow</td><td>0.54</td><td>0.44</td><td>0.65</td><td>0.42</td><td>0.67</td><td>161</td><td>887</td><td>0.15</td><td>0.13</td><td>2</td><td>13015</td></tr>
+<tr><td>Georgia</td><td>Rockdale</td><td>0.54</td><td>0.43</td><td>0.64</td><td>0.41</td><td>0.67</td><td>876</td><td>142</td><td>0.21</td><td>0.67</td><td>1</td><td>13247</td></tr>
+<tr><td>Georgia</td><td>Lamar</td><td>0.53</td><td>0.35</td><td>0.71</td><td>0.28</td><td>0.77</td><td>66</td><td>117</td><td>0.23</td><td>0.32</td><td>1</td><td>13171</td></tr>
+<tr><td>Georgia</td><td>Douglas</td><td>0.53</td><td>0.47</td><td>0.59</td><td>0.45</td><td>0.61</td><td>1134</td><td>447</td><td>0.19</td><td>0.54</td><td>1</td><td>13097</td></tr>
+<tr><td>Georgia</td><td>Paulding</td><td>0.51</td><td>0.46</td><td>0.57</td><td>0.44</td><td>0.59</td><td>594</td><td>1344</td><td>0.10</td><td>0.25</td><td>1</td><td>13223</td></tr>
+<tr><td>Georgia</td><td>Newton</td><td>0.47</td><td>0.40</td><td>0.54</td><td>0.38</td><td>0.56</td><td>854</td><td>407</td><td>0.21</td><td>0.57</td><td>1</td><td>13217</td></tr>
+<tr><td>Georgia</td><td>Long</td><td>0.45</td><td>0.30</td><td>0.61</td><td>0.25</td><td>0.65</td><td>87</td><td>137</td><td>0.22</td><td>0.26</td><td>1</td><td>13183</td></tr>
+<tr><td>Georgia</td><td>Clayton</td><td>0.45</td><td>0.39</td><td>0.52</td><td>0.37</td><td>0.54</td><td>3326</td><td>364</td><td>0.27</td><td>0.65</td><td>4</td><td>13063</td></tr>
+<tr><td>Louisiana</td><td>Morehouse</td><td>0.98</td><td>0.83</td><td>1.13</td><td>0.78</td><td>1.17</td><td>185</td><td>94</td><td>0.41</td><td>0.65</td><td>1</td><td>22067</td></tr>
+<tr><td>Louisiana</td><td>Bossier</td><td>0.95</td><td>0.89</td><td>1.02</td><td>0.87</td><td>1.04</td><td>498</td><td>966</td><td>0.18</td><td>0.29</td><td>1</td><td>22015</td></tr>
+<tr><td>Louisiana</td><td>Vermilion</td><td>0.92</td><td>0.81</td><td>1.04</td><td>0.78</td><td>1.06</td><td>148</td><td>520</td><td>0.24</td><td>0.20</td><td>1</td><td>22113</td></tr>
+<tr><td>Louisiana</td><td>Acadia</td><td>0.92</td><td>0.82</td><td>1.02</td><td>0.79</td><td>1.05</td><td>185</td><td>484</td><td>0.33</td><td>0.25</td><td>1</td><td>22001</td></tr>
+<tr><td>Louisiana</td><td>Natchitoches</td><td>0.92</td><td>0.80</td><td>1.04</td><td>0.77</td><td>1.07</td><td>256</td><td>157</td><td>0.29</td><td>0.55</td><td>2</td><td>22069</td></tr>
+<tr><td>Louisiana</td><td>Lincoln</td><td>0.91</td><td>0.79</td><td>1.04</td><td>0.75</td><td>1.08</td><td>188</td><td>172</td><td>0.29</td><td>0.47</td><td>4</td><td>22061</td></tr>
+<tr><td>Louisiana</td><td>Lafayette</td><td>0.91</td><td>0.86</td><td>0.96</td><td>0.84</td><td>0.98</td><td>1041</td><td>1136</td><td>0.18</td><td>0.41</td><td>5</td><td>22055</td></tr>
+<tr><td>Louisiana</td><td>Union</td><td>0.90</td><td>0.71</td><td>1.10</td><td>0.65</td><td>1.15</td><td>65</td><td>106</td><td>0.28</td><td>0.32</td><td>2</td><td>22111</td></tr>
+<tr><td>Louisiana</td><td>East Baton Rouge</td><td>0.90</td><td>0.85</td><td>0.94</td><td>0.84</td><td>0.95</td><td>2943</td><td>992</td><td>0.24</td><td>0.67</td><td>28</td><td>22033</td></tr>
+<tr><td>Louisiana</td><td>Ouachita</td><td>0.89</td><td>0.84</td><td>0.94</td><td>0.82</td><td>0.96</td><td>997</td><td>952</td><td>0.28</td><td>0.50</td><td>4</td><td>22073</td></tr>
+<tr><td>Louisiana</td><td>Richland</td><td>0.88</td><td>0.72</td><td>1.05</td><td>0.67</td><td>1.09</td><td>121</td><td>90</td><td>0.33</td><td>0.51</td><td>2</td><td>22083</td></tr>
+<tr><td>Louisiana</td><td>Assumption</td><td>0.87</td><td>0.72</td><td>1.03</td><td>0.67</td><td>1.08</td><td>98</td><td>120</td><td>0.28</td><td>0.42</td><td>1</td><td>22007</td></tr>
+<tr><td>Louisiana</td><td>Ascension</td><td>0.85</td><td>0.79</td><td>0.92</td><td>0.77</td><td>0.94</td><td>545</td><td>982</td><td>0.14</td><td>0.31</td><td>1</td><td>22005</td></tr>
+<tr><td>Louisiana</td><td>Jackson</td><td>0.85</td><td>0.67</td><td>1.04</td><td>0.61</td><td>1.10</td><td>61</td><td>106</td><td>0.28</td><td>0.32</td><td>1</td><td>22049</td></tr>
+<tr><td>Louisiana</td><td>Caddo</td><td>0.85</td><td>0.80</td><td>0.90</td><td>0.79</td><td>0.91</td><td>1845</td><td>802</td><td>0.36</td><td>0.63</td><td>1</td><td>22017</td></tr>
+<tr><td>Louisiana</td><td>West Feliciana</td><td>0.83</td><td>0.64</td><td>1.02</td><td>0.57</td><td>1.09</td><td>59</td><td>102</td><td>0.18</td><td>0.38</td><td>1</td><td>22125</td></tr>
+<tr><td>Louisiana</td><td>De Soto</td><td>0.83</td><td>0.70</td><td>0.96</td><td>0.66</td><td>1.00</td><td>147</td><td>198</td><td>0.23</td><td>0.42</td><td>1</td><td>22031</td></tr>
+<tr><td>Louisiana</td><td>Lafourche</td><td>0.83</td><td>0.73</td><td>0.92</td><td>0.71</td><td>0.95</td><td>200</td><td>683</td><td>0.21</td><td>0.19</td><td>2</td><td>22057</td></tr>
+<tr><td>Louisiana</td><td>Terrebonne</td><td>0.82</td><td>0.74</td><td>0.90</td><td>0.71</td><td>0.92</td><td>331</td><td>603</td><td>0.22</td><td>0.27</td><td>1</td><td>22109</td></tr>
+<tr><td>Louisiana</td><td>Franklin</td><td>0.81</td><td>0.65</td><td>0.96</td><td>0.60</td><td>1.01</td><td>109</td><td>106</td><td>0.35</td><td>0.51</td><td>1</td><td>22041</td></tr>
+<tr><td>Louisiana</td><td>Tangipahoa</td><td>0.80</td><td>0.74</td><td>0.86</td><td>0.72</td><td>0.88</td><td>685</td><td>613</td><td>0.23</td><td>0.46</td><td>2</td><td>22105</td></tr>
+<tr><td>Louisiana</td><td>Bienville</td><td>0.80</td><td>0.61</td><td>0.99</td><td>0.55</td><td>1.05</td><td>72</td><td>72</td><td>0.34</td><td>0.46</td><td>1</td><td>22013</td></tr>
+<tr><td>Louisiana</td><td>Winn</td><td>0.80</td><td>0.62</td><td>0.98</td><td>0.56</td><td>1.04</td><td>59</td><td>110</td><td>0.27</td><td>0.34</td><td>1</td><td>22127</td></tr>
+<tr><td>Louisiana</td><td>Pointe Coupee</td><td>0.80</td><td>0.63</td><td>0.97</td><td>0.58</td><td>1.02</td><td>115</td><td>77</td><td>0.27</td><td>0.59</td><td>1</td><td>22077</td></tr>
+<tr><td>Louisiana</td><td>East Feliciana</td><td>0.80</td><td>0.56</td><td>1.03</td><td>0.49</td><td>1.11</td><td>86</td><td>55</td><td>0.23</td><td>0.60</td><td>1</td><td>22037</td></tr>
+<tr><td>Louisiana</td><td>St. Charles</td><td>0.80</td><td>0.70</td><td>0.89</td><td>0.66</td><td>0.93</td><td>256</td><td>393</td><td>0.16</td><td>0.33</td><td>1</td><td>22089</td></tr>
+<tr><td>Louisiana</td><td>Washington</td><td>0.80</td><td>0.69</td><td>0.90</td><td>0.66</td><td>0.93</td><td>231</td><td>252</td><td>0.37</td><td>0.39</td><td>2</td><td>22117</td></tr>
+<tr><td>Louisiana</td><td>St. Tammany</td><td>0.78</td><td>0.72</td><td>0.83</td><td>0.71</td><td>0.85</td><td>561</td><td>2010</td><td>0.15</td><td>0.19</td><td>1</td><td>22103</td></tr>
+<tr><td>Louisiana</td><td>Calcasieu</td><td>0.78</td><td>0.73</td><td>0.82</td><td>0.71</td><td>0.84</td><td>915</td><td>1396</td><td>0.20</td><td>0.35</td><td>4</td><td>22019</td></tr>
+<tr><td>Louisiana</td><td>Vernon</td><td>0.77</td><td>0.63</td><td>0.91</td><td>0.60</td><td>0.94</td><td>91</td><td>422</td><td>0.24</td><td>0.15</td><td>1</td><td>22115</td></tr>
+<tr><td>Louisiana</td><td>Orleans</td><td>0.77</td><td>0.69</td><td>0.85</td><td>0.67</td><td>0.87</td><td>2616</td><td>267</td><td>0.34</td><td>0.77</td><td>78</td><td>22071</td></tr>
+<tr><td>Louisiana</td><td>Sabine</td><td>0.75</td><td>0.58</td><td>0.92</td><td>0.53</td><td>0.96</td><td>67</td><td>155</td><td>0.27</td><td>0.23</td><td>1</td><td>22085</td></tr>
+<tr><td>Louisiana</td><td>Webster</td><td>0.74</td><td>0.64</td><td>0.85</td><td>0.60</td><td>0.89</td><td>177</td><td>250</td><td>0.32</td><td>0.41</td><td>1</td><td>22119</td></tr>
+<tr><td>Louisiana</td><td>St. James</td><td>0.74</td><td>0.59</td><td>0.89</td><td>0.53</td><td>0.94</td><td>151</td><td>106</td><td>0.24</td><td>0.62</td><td>2</td><td>22093</td></tr>
+<tr><td>Louisiana</td><td>St. Landry</td><td>0.73</td><td>0.66</td><td>0.81</td><td>0.63</td><td>0.84</td><td>600</td><td>350</td><td>0.43</td><td>0.58</td><td>2</td><td>22097</td></tr>
+<tr><td>Louisiana</td><td>Concordia</td><td>0.73</td><td>0.59</td><td>0.87</td><td>0.54</td><td>0.92</td><td>131</td><td>113</td><td>0.35</td><td>0.47</td><td>2</td><td>22029</td></tr>
+<tr><td>Louisiana</td><td>Plaquemines</td><td>0.72</td><td>0.55</td><td>0.89</td><td>0.50</td><td>0.94</td><td>80</td><td>164</td><td>0.18</td><td>0.27</td><td>2</td><td>22075</td></tr>
+<tr><td>Louisiana</td><td>Jefferson</td><td>0.72</td><td>0.67</td><td>0.76</td><td>0.65</td><td>0.78</td><td>1523</td><td>883</td><td>0.23</td><td>0.39</td><td>4</td><td>22051</td></tr>
+<tr><td>Louisiana</td><td>St. John the Baptist</td><td>0.70</td><td>0.53</td><td>0.87</td><td>0.49</td><td>0.91</td><td>358</td><td>63</td><td>0.25</td><td>0.78</td><td>1</td><td>22095</td></tr>
+<tr><td>Louisiana</td><td>Avoyelles</td><td>0.69</td><td>0.58</td><td>0.81</td><td>0.54</td><td>0.85</td><td>180</td><td>185</td><td>0.37</td><td>0.44</td><td>2</td><td>22009</td></tr>
+<tr><td>Louisiana</td><td>St. Mary</td><td>0.69</td><td>0.58</td><td>0.79</td><td>0.55</td><td>0.82</td><td>247</td><td>260</td><td>0.26</td><td>0.39</td><td>2</td><td>22101</td></tr>
+<tr><td>Louisiana</td><td>Rapides</td><td>0.66</td><td>0.60</td><td>0.71</td><td>0.58</td><td>0.73</td><td>727</td><td>845</td><td>0.22</td><td>0.42</td><td>2</td><td>22079</td></tr>
+<tr><td>Louisiana</td><td>Iberia</td><td>0.64</td><td>0.55</td><td>0.72</td><td>0.53</td><td>0.74</td><td>418</td><td>439</td><td>0.37</td><td>0.43</td><td>1</td><td>22045</td></tr>
+<tr><td>Louisiana</td><td>Allen</td><td>0.63</td><td>0.47</td><td>0.79</td><td>0.42</td><td>0.84</td><td>63</td><td>232</td><td>0.21</td><td>0.20</td><td>1</td><td>22003</td></tr>
+<tr><td>Louisiana</td><td>St. Martin</td><td>0.61</td><td>0.52</td><td>0.71</td><td>0.48</td><td>0.74</td><td>271</td><td>276</td><td>0.26</td><td>0.45</td><td>1</td><td>22099</td></tr>
+<tr><td>Louisiana</td><td>Iberville</td><td>0.61</td><td>0.47</td><td>0.74</td><td>0.43</td><td>0.79</td><td>221</td><td>104</td><td>0.32</td><td>0.68</td><td>2</td><td>22047</td></tr>
+<tr><td>Louisiana</td><td>West Baton Rouge</td><td>0.59</td><td>0.45</td><td>0.73</td><td>0.40</td><td>0.78</td><td>140</td><td>113</td><td>0.19</td><td>0.51</td><td>1</td><td>22121</td></tr>
+<tr><td>Louisiana</td><td>Livingston</td><td>0.58</td><td>0.49</td><td>0.68</td><td>0.47</td><td>0.70</td><td>186</td><td>1606</td><td>0.14</td><td>0.09</td><td>1</td><td>22063</td></tr>
+<tr><td>Louisiana</td><td>St. Bernard</td><td>0.57</td><td>0.46</td><td>0.68</td><td>0.43</td><td>0.71</td><td>184</td><td>273</td><td>0.28</td><td>0.31</td><td>1</td><td>22087</td></tr>
+<tr><td>Louisiana</td><td>Jefferson Davis</td><td>0.55</td><td>0.41</td><td>0.69</td><td>0.37</td><td>0.73</td><td>81</td><td>296</td><td>0.22</td><td>0.20</td><td>1</td><td>22053</td></tr>
+<tr><td>Louisiana</td><td>Beauregard</td><td>0.54</td><td>0.37</td><td>0.71</td><td>0.33</td><td>0.75</td><td>55</td><td>349</td><td>0.17</td><td>0.12</td><td>1</td><td>22011</td></tr>
+<tr><td>Louisiana</td><td>Evangeline</td><td>0.51</td><td>0.41</td><td>0.62</td><td>0.37</td><td>0.66</td><td>179</td><td>258</td><td>0.32</td><td>0.37</td><td>1</td><td>22039</td></tr>
+<tr><td>Mississippi</td><td>Hinds</td><td>1.16</td><td>1.04</td><td>1.27</td><td>1.03</td><td>1.28</td><td>2559</td><td>169</td><td>0.28</td><td>0.88</td><td>9</td><td>28049</td></tr>
+<tr><td>Mississippi</td><td>Lowndes</td><td>1.08</td><td>0.98</td><td>1.18</td><td>0.96</td><td>1.21</td><td>419</td><td>221</td><td>0.33</td><td>0.59</td><td>3</td><td>28087</td></tr>
+<tr><td>Mississippi</td><td>Oktibbeha</td><td>1.03</td><td>0.89</td><td>1.18</td><td>0.86</td><td>1.21</td><td>269</td><td>103</td><td>0.28</td><td>0.66</td><td>1</td><td>28105</td></tr>
+<tr><td>Mississippi</td><td>Winston</td><td>0.98</td><td>0.81</td><td>1.15</td><td>0.76</td><td>1.20</td><td>153</td><td>75</td><td>0.30</td><td>0.64</td><td>1</td><td>28159</td></tr>
+<tr><td>Mississippi</td><td>Madison</td><td>0.95</td><td>0.88</td><td>1.02</td><td>0.86</td><td>1.04</td><td>643</td><td>519</td><td>0.13</td><td>0.49</td><td>2</td><td>28089</td></tr>
+<tr><td>Mississippi</td><td>Forrest</td><td>0.94</td><td>0.85</td><td>1.02</td><td>0.83</td><td>1.05</td><td>408</td><td>340</td><td>0.32</td><td>0.50</td><td>4</td><td>28035</td></tr>
+<tr><td>Mississippi</td><td>Neshoba</td><td>0.89</td><td>0.70</td><td>1.07</td><td>0.65</td><td>1.12</td><td>58</td><td>162</td><td>0.35</td><td>0.31</td><td>2</td><td>28099</td></tr>
+<tr><td>Mississippi</td><td>Monroe</td><td>0.88</td><td>0.75</td><td>1.02</td><td>0.71</td><td>1.06</td><td>116</td><td>254</td><td>0.24</td><td>0.37</td><td>3</td><td>28095</td></tr>
+<tr><td>Mississippi</td><td>Attala</td><td>0.84</td><td>0.66</td><td>1.03</td><td>0.61</td><td>1.08</td><td>118</td><td>66</td><td>0.31</td><td>0.56</td><td>2</td><td>28007</td></tr>
+<tr><td>Mississippi</td><td>Clay</td><td>0.81</td><td>0.52</td><td>1.10</td><td>0.44</td><td>1.18</td><td>198</td><td>61</td><td>0.32</td><td>0.78</td><td>1</td><td>28025</td></tr>
+<tr><td>Mississippi</td><td>DeSoto</td><td>0.81</td><td>0.76</td><td>0.86</td><td>0.75</td><td>0.87</td><td>1037</td><td>1320</td><td>0.12</td><td>0.37</td><td>1</td><td>28033</td></tr>
+<tr><td>Mississippi</td><td>Lauderdale</td><td>0.80</td><td>0.72</td><td>0.88</td><td>0.70</td><td>0.90</td><td>508</td><td>345</td><td>0.31</td><td>0.58</td><td>2</td><td>28075</td></tr>
+<tr><td>Mississippi</td><td>Lawrence</td><td>0.77</td><td>0.58</td><td>0.96</td><td>0.52</td><td>1.02</td><td>68</td><td>95</td><td>0.25</td><td>0.40</td><td>1</td><td>28077</td></tr>
+<tr><td>Mississippi</td><td>Clarke</td><td>0.76</td><td>0.59</td><td>0.92</td><td>0.54</td><td>0.98</td><td>80</td><td>101</td><td>0.32</td><td>0.40</td><td>2</td><td>28023</td></tr>
+<tr><td>Mississippi</td><td>Smith</td><td>0.75</td><td>0.57</td><td>0.94</td><td>0.51</td><td>0.99</td><td>56</td><td>148</td><td>0.23</td><td>0.29</td><td>1</td><td>28129</td></tr>
+<tr><td>Mississippi</td><td>Jones</td><td>0.75</td><td>0.67</td><td>0.83</td><td>0.64</td><td>0.86</td><td>343</td><td>444</td><td>0.28</td><td>0.37</td><td>3</td><td>28067</td></tr>
+<tr><td>Mississippi</td><td>Yazoo</td><td>0.74</td><td>0.56</td><td>0.93</td><td>0.51</td><td>0.97</td><td>255</td><td>53</td><td>0.37</td><td>0.80</td><td>2</td><td>28163</td></tr>
+<tr><td>Mississippi</td><td>Warren</td><td>0.74</td><td>0.63</td><td>0.84</td><td>0.60</td><td>0.88</td><td>377</td><td>179</td><td>0.30</td><td>0.64</td><td>1</td><td>28149</td></tr>
+<tr><td>Mississippi</td><td>Grenada</td><td>0.73</td><td>0.60</td><td>0.86</td><td>0.56</td><td>0.90</td><td>166</td><td>153</td><td>0.29</td><td>0.48</td><td>1</td><td>28043</td></tr>
+<tr><td>Mississippi</td><td>Covington</td><td>0.73</td><td>0.57</td><td>0.89</td><td>0.51</td><td>0.95</td><td>103</td><td>93</td><td>0.32</td><td>0.48</td><td>1</td><td>28031</td></tr>
+<tr><td>Mississippi</td><td>Jackson</td><td>0.73</td><td>0.67</td><td>0.79</td><td>0.65</td><td>0.80</td><td>526</td><td>1107</td><td>0.25</td><td>0.26</td><td>4</td><td>28059</td></tr>
+<tr><td>Mississippi</td><td>Bolivar</td><td>0.72</td><td>0.52</td><td>0.92</td><td>0.48</td><td>0.97</td><td>356</td><td>60</td><td>0.36</td><td>0.81</td><td>3</td><td>28011</td></tr>
+<tr><td>Mississippi</td><td>Pike</td><td>0.72</td><td>0.59</td><td>0.84</td><td>0.56</td><td>0.87</td><td>377</td><td>114</td><td>0.47</td><td>0.69</td><td>3</td><td>28113</td></tr>
+<tr><td>Mississippi</td><td>Copiah</td><td>0.71</td><td>0.55</td><td>0.86</td><td>0.51</td><td>0.91</td><td>240</td><td>69</td><td>0.35</td><td>0.69</td><td>2</td><td>28029</td></tr>
+<tr><td>Mississippi</td><td>Harrison</td><td>0.69</td><td>0.64</td><td>0.74</td><td>0.63</td><td>0.76</td><td>897</td><td>1258</td><td>0.26</td><td>0.36</td><td>6</td><td>28047</td></tr>
+<tr><td>Mississippi</td><td>Chickasaw</td><td>0.68</td><td>0.49</td><td>0.88</td><td>0.42</td><td>0.95</td><td>61</td><td>63</td><td>0.26</td><td>0.53</td><td>3</td><td>28017</td></tr>
+<tr><td>Mississippi</td><td>Lafayette</td><td>0.68</td><td>0.57</td><td>0.78</td><td>0.54</td><td>0.82</td><td>162</td><td>349</td><td>0.15</td><td>0.30</td><td>2</td><td>28071</td></tr>
+<tr><td>Mississippi</td><td>Lee</td><td>0.67</td><td>0.60</td><td>0.74</td><td>0.58</td><td>0.76</td><td>431</td><td>596</td><td>0.19</td><td>0.40</td><td>4</td><td>28081</td></tr>
+<tr><td>Mississippi</td><td>Marshall</td><td>0.65</td><td>0.51</td><td>0.80</td><td>0.46</td><td>0.84</td><td>179</td><td>93</td><td>0.33</td><td>0.59</td><td>2</td><td>28093</td></tr>
+<tr><td>Mississippi</td><td>Walthall</td><td>0.64</td><td>0.41</td><td>0.88</td><td>0.33</td><td>0.95</td><td>90</td><td>54</td><td>0.35</td><td>0.62</td><td>1</td><td>28147</td></tr>
+<tr><td>Mississippi</td><td>Newton</td><td>0.64</td><td>0.47</td><td>0.81</td><td>0.43</td><td>0.85</td><td>69</td><td>157</td><td>0.31</td><td>0.40</td><td>3</td><td>28101</td></tr>
+<tr><td>Mississippi</td><td>Washington</td><td>0.63</td><td>0.43</td><td>0.84</td><td>0.39</td><td>0.88</td><td>489</td><td>57</td><td>0.53</td><td>0.88</td><td>4</td><td>28151</td></tr>
+<tr><td>Mississippi</td><td>Jasper</td><td>0.62</td><td>0.31</td><td>0.93</td><td>0.21</td><td>1.03</td><td>131</td><td>51</td><td>0.27</td><td>0.73</td><td>2</td><td>28061</td></tr>
+<tr><td>Mississippi</td><td>Marion</td><td>0.61</td><td>0.48</td><td>0.74</td><td>0.44</td><td>0.79</td><td>128</td><td>152</td><td>0.35</td><td>0.43</td><td>2</td><td>28091</td></tr>
+<tr><td>Mississippi</td><td>Tate</td><td>0.60</td><td>0.46</td><td>0.74</td><td>0.41</td><td>0.79</td><td>114</td><td>140</td><td>0.24</td><td>0.41</td><td>2</td><td>28137</td></tr>
+<tr><td>Mississippi</td><td>Pearl River</td><td>0.58</td><td>0.44</td><td>0.72</td><td>0.41</td><td>0.75</td><td>87</td><td>531</td><td>0.24</td><td>0.17</td><td>3</td><td>28109</td></tr>
+<tr><td>Mississippi</td><td>Wayne</td><td>0.58</td><td>0.43</td><td>0.72</td><td>0.38</td><td>0.77</td><td>130</td><td>105</td><td>0.31</td><td>0.54</td><td>1</td><td>28153</td></tr>
+<tr><td>Mississippi</td><td>Scott</td><td>0.57</td><td>0.45</td><td>0.69</td><td>0.41</td><td>0.73</td><td>193</td><td>158</td><td>0.37</td><td>0.40</td><td>2</td><td>28123</td></tr>
+<tr><td>Mississippi</td><td>Simpson</td><td>0.56</td><td>0.43</td><td>0.69</td><td>0.38</td><td>0.74</td><td>149</td><td>142</td><td>0.26</td><td>0.50</td><td>1</td><td>28127</td></tr>
+<tr><td>Mississippi</td><td>Lamar</td><td>0.56</td><td>0.47</td><td>0.65</td><td>0.44</td><td>0.68</td><td>204</td><td>529</td><td>0.17</td><td>0.27</td><td>1</td><td>28073</td></tr>
+<tr><td>Mississippi</td><td>Lincoln</td><td>0.54</td><td>0.42</td><td>0.66</td><td>0.39</td><td>0.70</td><td>138</td><td>280</td><td>0.23</td><td>0.37</td><td>3</td><td>28085</td></tr>
+<tr><td>Mississippi</td><td>Leake</td><td>0.51</td><td>0.29</td><td>0.73</td><td>0.22</td><td>0.80</td><td>133</td><td>56</td><td>0.31</td><td>0.60</td><td>1</td><td>28079</td></tr>
+<tr><td>Mississippi</td><td>Rankin</td><td>0.50</td><td>0.44</td><td>0.55</td><td>0.42</td><td>0.57</td><td>502</td><td>1195</td><td>0.11</td><td>0.26</td><td>4</td><td>28121</td></tr>
+<tr><td>Mississippi</td><td>Panola</td><td>0.44</td><td>0.32</td><td>0.55</td><td>0.29</td><td>0.59</td><td>285</td><td>128</td><td>0.34</td><td>0.65</td><td>2</td><td>28107</td></tr>
+<tr><td>North Carolina</td><td>Orange</td><td>1.15</td><td>1.04</td><td>1.26</td><td>1.02</td><td>1.28</td><td>189</td><td>811</td><td>0.09</td><td>0.12</td><td>4</td><td>37135</td></tr>
+<tr><td>North Carolina</td><td>Mecklenburg</td><td>1.14</td><td>1.11</td><td>1.17</td><td>1.11</td><td>1.18</td><td>4596</td><td>3450</td><td>0.16</td><td>0.38</td><td>30</td><td>37119</td></tr>
+<tr><td>North Carolina</td><td>Wake</td><td>1.14</td><td>1.11</td><td>1.17</td><td>1.11</td><td>1.18</td><td>2902</td><td>6094</td><td>0.10</td><td>0.22</td><td>27</td><td>37183</td></tr>
+<tr><td>North Carolina</td><td>New Hanover</td><td>1.11</td><td>1.03</td><td>1.19</td><td>1.01</td><td>1.21</td><td>345</td><td>1246</td><td>0.20</td><td>0.19</td><td>8</td><td>37129</td></tr>
+<tr><td>North Carolina</td><td>Forsyth</td><td>1.10</td><td>1.05</td><td>1.15</td><td>1.04</td><td>1.16</td><td>1190</td><td>1535</td><td>0.23</td><td>0.29</td><td>7</td><td>37067</td></tr>
+<tr><td>North Carolina</td><td>Guilford</td><td>1.09</td><td>1.05</td><td>1.13</td><td>1.04</td><td>1.14</td><td>2411</td><td>1842</td><td>0.22</td><td>0.41</td><td>12</td><td>37081</td></tr>
+<tr><td>North Carolina</td><td>Pitt</td><td>1.08</td><td>1.02</td><td>1.14</td><td>1.00</td><td>1.16</td><td>822</td><td>644</td><td>0.25</td><td>0.47</td><td>4</td><td>37147</td></tr>
+<tr><td>North Carolina</td><td>Chatham</td><td>1.01</td><td>0.81</td><td>1.21</td><td>0.78</td><td>1.24</td><td>80</td><td>357</td><td>0.13</td><td>0.11</td><td>4</td><td>37037</td></tr>
+<tr><td>North Carolina</td><td>Durham</td><td>0.98</td><td>0.92</td><td>1.04</td><td>0.91</td><td>1.06</td><td>1146</td><td>686</td><td>0.19</td><td>0.41</td><td>16</td><td>37063</td></tr>
+<tr><td>North Carolina</td><td>Rowan</td><td>0.97</td><td>0.82</td><td>1.12</td><td>0.80</td><td>1.14</td><td>259</td><td>818</td><td>0.23</td><td>0.18</td><td>2</td><td>37159</td></tr>
+<tr><td>North Carolina</td><td>Union</td><td>0.94</td><td>0.87</td><td>1.01</td><td>0.86</td><td>1.02</td><td>399</td><td>2097</td><td>0.08</td><td>0.12</td><td>4</td><td>37179</td></tr>
+<tr><td>North Carolina</td><td>Buncombe</td><td>0.94</td><td>0.83</td><td>1.05</td><td>0.81</td><td>1.07</td><td>186</td><td>1519</td><td>0.16</td><td>0.08</td><td>7</td><td>37021</td></tr>
+<tr><td>North Carolina</td><td>Sampson</td><td>0.92</td><td>0.80</td><td>1.04</td><td>0.77</td><td>1.06</td><td>191</td><td>277</td><td>0.32</td><td>0.23</td><td>2</td><td>37163</td></tr>
+<tr><td>North Carolina</td><td>Person</td><td>0.91</td><td>0.77</td><td>1.05</td><td>0.73</td><td>1.09</td><td>115</td><td>238</td><td>0.22</td><td>0.29</td><td>3</td><td>37145</td></tr>
+<tr><td>North Carolina</td><td>Nash</td><td>0.90</td><td>0.82</td><td>0.98</td><td>0.79</td><td>1.01</td><td>692</td><td>342</td><td>0.23</td><td>0.54</td><td>3</td><td>37127</td></tr>
+<tr><td>North Carolina</td><td>Iredell</td><td>0.90</td><td>0.82</td><td>0.98</td><td>0.80</td><td>1.00</td><td>297</td><td>1544</td><td>0.13</td><td>0.14</td><td>7</td><td>37097</td></tr>
+<tr><td>North Carolina</td><td>Wilson</td><td>0.89</td><td>0.80</td><td>0.99</td><td>0.77</td><td>1.02</td><td>438</td><td>248</td><td>0.29</td><td>0.45</td><td>3</td><td>37195</td></tr>
+<tr><td>North Carolina</td><td>Craven</td><td>0.89</td><td>0.80</td><td>0.99</td><td>0.77</td><td>1.02</td><td>293</td><td>523</td><td>0.22</td><td>0.28</td><td>1</td><td>37049</td></tr>
+<tr><td>North Carolina</td><td>Lenoir</td><td>0.89</td><td>0.79</td><td>1.00</td><td>0.75</td><td>1.03</td><td>291</td><td>241</td><td>0.36</td><td>0.48</td><td>2</td><td>37107</td></tr>
+<tr><td>North Carolina</td><td>Catawba</td><td>0.88</td><td>0.75</td><td>1.01</td><td>0.73</td><td>1.04</td><td>127</td><td>1076</td><td>0.18</td><td>0.09</td><td>3</td><td>37035</td></tr>
+<tr><td>North Carolina</td><td>Martin</td><td>0.88</td><td>0.70</td><td>1.06</td><td>0.64</td><td>1.12</td><td>118</td><td>113</td><td>0.29</td><td>0.43</td><td>3</td><td>37117</td></tr>
+<tr><td>North Carolina</td><td>Moore</td><td>0.87</td><td>0.75</td><td>0.99</td><td>0.72</td><td>1.02</td><td>158</td><td>631</td><td>0.14</td><td>0.15</td><td>4</td><td>37125</td></tr>
+<tr><td>North Carolina</td><td>Beaufort</td><td>0.87</td><td>0.75</td><td>0.99</td><td>0.71</td><td>1.03</td><td>168</td><td>224</td><td>0.26</td><td>0.30</td><td>2</td><td>37013</td></tr>
+<tr><td>North Carolina</td><td>Alamance</td><td>0.87</td><td>0.79</td><td>0.95</td><td>0.77</td><td>0.97</td><td>408</td><td>768</td><td>0.18</td><td>0.22</td><td>4</td><td>37001</td></tr>
+<tr><td>North Carolina</td><td>Pender</td><td>0.86</td><td>0.72</td><td>1.01</td><td>0.69</td><td>1.04</td><td>97</td><td>472</td><td>0.20</td><td>0.14</td><td>1</td><td>37141</td></tr>
+<tr><td>North Carolina</td><td>Halifax</td><td>0.85</td><td>0.72</td><td>0.98</td><td>0.68</td><td>1.01</td><td>268</td><td>136</td><td>0.31</td><td>0.60</td><td>4</td><td>37083</td></tr>
+<tr><td>North Carolina</td><td>Scotland</td><td>0.85</td><td>0.70</td><td>0.99</td><td>0.66</td><td>1.03</td><td>205</td><td>129</td><td>0.37</td><td>0.45</td><td>1</td><td>37165</td></tr>
+<tr><td>North Carolina</td><td>Wayne</td><td>0.82</td><td>0.74</td><td>0.90</td><td>0.72</td><td>0.92</td><td>477</td><td>473</td><td>0.29</td><td>0.36</td><td>3</td><td>37191</td></tr>
+<tr><td>North Carolina</td><td>Johnston</td><td>0.80</td><td>0.73</td><td>0.88</td><td>0.71</td><td>0.89</td><td>461</td><td>1572</td><td>0.15</td><td>0.16</td><td>3</td><td>37101</td></tr>
+<tr><td>North Carolina</td><td>Stanly</td><td>0.79</td><td>0.62</td><td>0.95</td><td>0.58</td><td>0.99</td><td>93</td><td>507</td><td>0.18</td><td>0.13</td><td>2</td><td>37167</td></tr>
+<tr><td>North Carolina</td><td>Chowan</td><td>0.78</td><td>0.58</td><td>0.99</td><td>0.51</td><td>1.05</td><td>67</td><td>60</td><td>0.27</td><td>0.44</td><td>1</td><td>37041</td></tr>
+<tr><td>North Carolina</td><td>Davidson</td><td>0.77</td><td>0.67</td><td>0.87</td><td>0.65</td><td>0.89</td><td>208</td><td>1214</td><td>0.19</td><td>0.10</td><td>4</td><td>37057</td></tr>
+<tr><td>North Carolina</td><td>Lee</td><td>0.76</td><td>0.64</td><td>0.88</td><td>0.61</td><td>0.92</td><td>170</td><td>297</td><td>0.22</td><td>0.21</td><td>2</td><td>37105</td></tr>
+<tr><td>North Carolina</td><td>Hoke</td><td>0.76</td><td>0.64</td><td>0.87</td><td>0.60</td><td>0.91</td><td>237</td><td>180</td><td>0.24</td><td>0.34</td><td>1</td><td>37093</td></tr>
+<tr><td>North Carolina</td><td>Columbus</td><td>0.76</td><td>0.64</td><td>0.87</td><td>0.61</td><td>0.90</td><td>192</td><td>300</td><td>0.33</td><td>0.33</td><td>4</td><td>37047</td></tr>
+<tr><td>North Carolina</td><td>Montgomery</td><td>0.75</td><td>0.50</td><td>1.01</td><td>0.44</td><td>1.06</td><td>53</td><td>117</td><td>0.23</td><td>0.20</td><td>1</td><td>37123</td></tr>
+<tr><td>North Carolina</td><td>Cabarrus</td><td>0.75</td><td>0.70</td><td>0.80</td><td>0.68</td><td>0.82</td><td>682</td><td>1494</td><td>0.11</td><td>0.23</td><td>6</td><td>37025</td></tr>
+<tr><td>North Carolina</td><td>Rutherford</td><td>0.75</td><td>0.59</td><td>0.90</td><td>0.56</td><td>0.94</td><td>78</td><td>516</td><td>0.25</td><td>0.11</td><td>3</td><td>37161</td></tr>
+<tr><td>North Carolina</td><td>Bladen</td><td>0.74</td><td>0.55</td><td>0.92</td><td>0.50</td><td>0.98</td><td>112</td><td>119</td><td>0.41</td><td>0.37</td><td>3</td><td>37017</td></tr>
+<tr><td>North Carolina</td><td>Cleveland</td><td>0.72</td><td>0.64</td><td>0.80</td><td>0.62</td><td>0.82</td><td>315</td><td>717</td><td>0.26</td><td>0.26</td><td>2</td><td>37045</td></tr>
+<tr><td>North Carolina</td><td>Duplin</td><td>0.72</td><td>0.59</td><td>0.85</td><td>0.55</td><td>0.89</td><td>159</td><td>237</td><td>0.27</td><td>0.22</td><td>1</td><td>37061</td></tr>
+<tr><td>North Carolina</td><td>Onslow</td><td>0.71</td><td>0.64</td><td>0.79</td><td>0.61</td><td>0.81</td><td>389</td><td>1166</td><td>0.21</td><td>0.19</td><td>2</td><td>37133</td></tr>
+<tr><td>North Carolina</td><td>Cumberland</td><td>0.71</td><td>0.67</td><td>0.76</td><td>0.65</td><td>0.77</td><td>1728</td><td>1063</td><td>0.22</td><td>0.45</td><td>3</td><td>37051</td></tr>
+<tr><td>North Carolina</td><td>Vance</td><td>0.71</td><td>0.58</td><td>0.84</td><td>0.55</td><td>0.88</td><td>336</td><td>104</td><td>0.32</td><td>0.59</td><td>3</td><td>37181</td></tr>
+<tr><td>North Carolina</td><td>Gaston</td><td>0.71</td><td>0.65</td><td>0.77</td><td>0.63</td><td>0.79</td><td>575</td><td>1470</td><td>0.16</td><td>0.23</td><td>3</td><td>37071</td></tr>
+<tr><td>North Carolina</td><td>Richmond</td><td>0.71</td><td>0.60</td><td>0.82</td><td>0.56</td><td>0.85</td><td>204</td><td>235</td><td>0.28</td><td>0.35</td><td>1</td><td>37153</td></tr>
+<tr><td>North Carolina</td><td>Granville</td><td>0.70</td><td>0.59</td><td>0.80</td><td>0.55</td><td>0.84</td><td>212</td><td>301</td><td>0.18</td><td>0.30</td><td>3</td><td>37077</td></tr>
+<tr><td>North Carolina</td><td>Greene</td><td>0.69</td><td>0.49</td><td>0.90</td><td>0.42</td><td>0.96</td><td>86</td><td>62</td><td>0.31</td><td>0.37</td><td>1</td><td>37079</td></tr>
+<tr><td>North Carolina</td><td>Anson</td><td>0.69</td><td>0.49</td><td>0.88</td><td>0.43</td><td>0.94</td><td>131</td><td>74</td><td>0.29</td><td>0.57</td><td>1</td><td>37007</td></tr>
+<tr><td>North Carolina</td><td>Brunswick</td><td>0.69</td><td>0.57</td><td>0.81</td><td>0.54</td><td>0.84</td><td>144</td><td>698</td><td>0.18</td><td>0.14</td><td>3</td><td>37019</td></tr>
+<tr><td>North Carolina</td><td>Caswell</td><td>0.69</td><td>0.49</td><td>0.88</td><td>0.43</td><td>0.95</td><td>68</td><td>101</td><td>0.26</td><td>0.37</td><td>1</td><td>37033</td></tr>
+<tr><td>North Carolina</td><td>Harnett</td><td>0.69</td><td>0.61</td><td>0.76</td><td>0.58</td><td>0.79</td><td>378</td><td>721</td><td>0.20</td><td>0.24</td><td>2</td><td>37085</td></tr>
+<tr><td>North Carolina</td><td>Robeson</td><td>0.68</td><td>0.56</td><td>0.79</td><td>0.53</td><td>0.82</td><td>382</td><td>202</td><td>0.34</td><td>0.23</td><td>3</td><td>37155</td></tr>
+<tr><td>North Carolina</td><td>Edgecombe</td><td>0.68</td><td>0.53</td><td>0.82</td><td>0.49</td><td>0.86</td><td>259</td><td>120</td><td>0.29</td><td>0.54</td><td>2</td><td>37065</td></tr>
+<tr><td>North Carolina</td><td>Lincoln</td><td>0.66</td><td>0.47</td><td>0.85</td><td>0.44</td><td>0.88</td><td>57</td><td>817</td><td>0.13</td><td>0.06</td><td>2</td><td>37109</td></tr>
+<tr><td>North Carolina</td><td>Pasquotank</td><td>0.64</td><td>0.52</td><td>0.76</td><td>0.48</td><td>0.80</td><td>203</td><td>189</td><td>0.28</td><td>0.43</td><td>2</td><td>37139</td></tr>
+<tr><td>North Carolina</td><td>Franklin</td><td>0.56</td><td>0.44</td><td>0.67</td><td>0.41</td><td>0.71</td><td>182</td><td>273</td><td>0.18</td><td>0.29</td><td>3</td><td>37069</td></tr>
+<tr><td>North Carolina</td><td>Rockingham</td><td>0.55</td><td>0.45</td><td>0.65</td><td>0.42</td><td>0.68</td><td>182</td><td>566</td><td>0.24</td><td>0.19</td><td>3</td><td>37157</td></tr>
+<tr><td>South Carolina</td><td>Charleston</td><td>1.47</td><td>1.42</td><td>1.52</td><td>1.41</td><td>1.53</td><td>1370</td><td>1773</td><td>0.24</td><td>0.37</td><td>1</td><td>45019</td></tr>
+<tr><td>South Carolina</td><td>Beaufort</td><td>1.02</td><td>0.94</td><td>1.09</td><td>0.92</td><td>1.11</td><td>425</td><td>658</td><td>0.19</td><td>0.26</td><td>1</td><td>45013</td></tr>
+<tr><td>South Carolina</td><td>Greenville</td><td>0.98</td><td>0.94</td><td>1.02</td><td>0.93</td><td>1.03</td><td>1372</td><td>3234</td><td>0.14</td><td>0.22</td><td>2</td><td>45045</td></tr>
+<tr><td>South Carolina</td><td>York</td><td>0.94</td><td>0.89</td><td>0.99</td><td>0.88</td><td>1.00</td><td>786</td><td>2167</td><td>0.12</td><td>0.22</td><td>4</td><td>45091</td></tr>
+<tr><td>South Carolina</td><td>Greenwood</td><td>0.88</td><td>0.78</td><td>0.97</td><td>0.75</td><td>1.00</td><td>287</td><td>416</td><td>0.28</td><td>0.38</td><td>3</td><td>45047</td></tr>
+<tr><td>South Carolina</td><td>Horry</td><td>0.86</td><td>0.81</td><td>0.91</td><td>0.79</td><td>0.93</td><td>673</td><td>2155</td><td>0.23</td><td>0.19</td><td>1</td><td>45051</td></tr>
+<tr><td>South Carolina</td><td>Dorchester</td><td>0.85</td><td>0.79</td><td>0.90</td><td>0.78</td><td>0.92</td><td>671</td><td>1161</td><td>0.16</td><td>0.30</td><td>2</td><td>45035</td></tr>
+<tr><td>South Carolina</td><td>Newberry</td><td>0.84</td><td>0.72</td><td>0.96</td><td>0.68</td><td>1.00</td><td>146</td><td>219</td><td>0.24</td><td>0.34</td><td>1</td><td>45071</td></tr>
+<tr><td>South Carolina</td><td>Berkeley</td><td>0.82</td><td>0.77</td><td>0.87</td><td>0.75</td><td>0.89</td><td>785</td><td>1420</td><td>0.17</td><td>0.29</td><td>1</td><td>45015</td></tr>
+<tr><td>South Carolina</td><td>Florence</td><td>0.82</td><td>0.76</td><td>0.88</td><td>0.74</td><td>0.90</td><td>871</td><td>587</td><td>0.24</td><td>0.54</td><td>5</td><td>45041</td></tr>
+<tr><td>South Carolina</td><td>Spartanburg</td><td>0.81</td><td>0.76</td><td>0.86</td><td>0.75</td><td>0.87</td><td>831</td><td>2117</td><td>0.20</td><td>0.23</td><td>8</td><td>45083</td></tr>
+<tr><td>South Carolina</td><td>Darlington</td><td>0.81</td><td>0.72</td><td>0.90</td><td>0.70</td><td>0.93</td><td>405</td><td>301</td><td>0.33</td><td>0.49</td><td>2</td><td>45031</td></tr>
+<tr><td>South Carolina</td><td>Lancaster</td><td>0.80</td><td>0.72</td><td>0.89</td><td>0.69</td><td>0.91</td><td>294</td><td>609</td><td>0.18</td><td>0.26</td><td>1</td><td>45057</td></tr>
+<tr><td>South Carolina</td><td>Barnwell</td><td>0.79</td><td>0.60</td><td>0.99</td><td>0.55</td><td>1.04</td><td>76</td><td>69</td><td>0.31</td><td>0.55</td><td>3</td><td>45011</td></tr>
+<tr><td>South Carolina</td><td>Anderson</td><td>0.79</td><td>0.72</td><td>0.86</td><td>0.71</td><td>0.88</td><td>374</td><td>1715</td><td>0.19</td><td>0.19</td><td>5</td><td>45007</td></tr>
+<tr><td>South Carolina</td><td>Edgefield</td><td>0.79</td><td>0.64</td><td>0.94</td><td>0.59</td><td>0.99</td><td>114</td><td>140</td><td>0.22</td><td>0.39</td><td>1</td><td>45037</td></tr>
+<tr><td>South Carolina</td><td>Richland</td><td>0.78</td><td>0.75</td><td>0.81</td><td>0.74</td><td>0.82</td><td>3461</td><td>2688</td><td>0.18</td><td>0.46</td><td>6</td><td>45079</td></tr>
+<tr><td>South Carolina</td><td>Lexington</td><td>0.77</td><td>0.71</td><td>0.83</td><td>0.70</td><td>0.85</td><td>578</td><td>2026</td><td>0.17</td><td>0.18</td><td>5</td><td>45063</td></tr>
+<tr><td>South Carolina</td><td>Clarendon</td><td>0.76</td><td>0.61</td><td>0.91</td><td>0.56</td><td>0.96</td><td>168</td><td>104</td><td>0.35</td><td>0.56</td><td>3</td><td>45027</td></tr>
+<tr><td>South Carolina</td><td>Orangeburg</td><td>0.76</td><td>0.65</td><td>0.87</td><td>0.62</td><td>0.90</td><td>740</td><td>135</td><td>0.34</td><td>0.76</td><td>3</td><td>45075</td></tr>
+<tr><td>South Carolina</td><td>Calhoun</td><td>0.75</td><td>0.51</td><td>0.99</td><td>0.43</td><td>1.07</td><td>74</td><td>53</td><td>0.26</td><td>0.56</td><td>1</td><td>45017</td></tr>
+<tr><td>South Carolina</td><td>Georgetown</td><td>0.75</td><td>0.66</td><td>0.84</td><td>0.63</td><td>0.87</td><td>305</td><td>363</td><td>0.30</td><td>0.44</td><td>1</td><td>45043</td></tr>
+<tr><td>South Carolina</td><td>Cherokee</td><td>0.74</td><td>0.63</td><td>0.85</td><td>0.60</td><td>0.88</td><td>171</td><td>419</td><td>0.21</td><td>0.27</td><td>1</td><td>45021</td></tr>
+<tr><td>South Carolina</td><td>Aiken</td><td>0.72</td><td>0.66</td><td>0.78</td><td>0.64</td><td>0.79</td><td>636</td><td>950</td><td>0.22</td><td>0.34</td><td>1</td><td>45003</td></tr>
+<tr><td>South Carolina</td><td>Sumter</td><td>0.72</td><td>0.64</td><td>0.79</td><td>0.62</td><td>0.81</td><td>804</td><td>372</td><td>0.28</td><td>0.61</td><td>1</td><td>45085</td></tr>
+<tr><td>South Carolina</td><td>Chesterfield</td><td>0.71</td><td>0.61</td><td>0.82</td><td>0.57</td><td>0.85</td><td>217</td><td>267</td><td>0.29</td><td>0.38</td><td>1</td><td>45025</td></tr>
+<tr><td>South Carolina</td><td>Pickens</td><td>0.66</td><td>0.52</td><td>0.81</td><td>0.49</td><td>0.84</td><td>81</td><td>962</td><td>0.15</td><td>0.07</td><td>1</td><td>45077</td></tr>
+<tr><td>South Carolina</td><td>Colleton</td><td>0.65</td><td>0.51</td><td>0.79</td><td>0.47</td><td>0.84</td><td>187</td><td>183</td><td>0.33</td><td>0.47</td><td>1</td><td>45029</td></tr>
+<tr><td>South Carolina</td><td>Kershaw</td><td>0.65</td><td>0.56</td><td>0.74</td><td>0.53</td><td>0.77</td><td>237</td><td>532</td><td>0.21</td><td>0.26</td><td>1</td><td>45055</td></tr>
+<tr><td>South Carolina</td><td>Laurens</td><td>0.64</td><td>0.53</td><td>0.74</td><td>0.50</td><td>0.77</td><td>216</td><td>352</td><td>0.28</td><td>0.32</td><td>2</td><td>45059</td></tr>
+<tr><td>South Carolina</td><td>Marion</td><td>0.63</td><td>0.45</td><td>0.82</td><td>0.40</td><td>0.87</td><td>257</td><td>56</td><td>0.35</td><td>0.76</td><td>1</td><td>45067</td></tr>
+<tr><td>South Carolina</td><td>Union</td><td>0.62</td><td>0.47</td><td>0.77</td><td>0.42</td><td>0.82</td><td>106</td><td>164</td><td>0.31</td><td>0.36</td><td>1</td><td>45087</td></tr>
+<tr><td>South Carolina</td><td>Dillon</td><td>0.61</td><td>0.49</td><td>0.73</td><td>0.45</td><td>0.77</td><td>185</td><td>167</td><td>0.50</td><td>0.52</td><td>2</td><td>45033</td></tr>
+<tr><td>South Carolina</td><td>Oconee</td><td>0.59</td><td>0.43</td><td>0.74</td><td>0.40</td><td>0.78</td><td>66</td><td>613</td><td>0.19</td><td>0.09</td><td>1</td><td>45073</td></tr>
+<tr><td>South Carolina</td><td>Hampton</td><td>0.55</td><td>0.38</td><td>0.72</td><td>0.32</td><td>0.77</td><td>106</td><td>66</td><td>0.37</td><td>0.63</td><td>2</td><td>45049</td></tr>
+<tr><td>South Carolina</td><td>Abbeville</td><td>0.55</td><td>0.39</td><td>0.70</td><td>0.34</td><td>0.75</td><td>73</td><td>144</td><td>0.27</td><td>0.34</td><td>1</td><td>45001</td></tr>
+<tr><td>South Carolina</td><td>Marlboro</td><td>0.50</td><td>0.36</td><td>0.65</td><td>0.30</td><td>0.70</td><td>182</td><td>98</td><td>0.42</td><td>0.59</td><td>1</td><td>45069</td></tr>
+<tr><td>South Carolina</td><td>Chester</td><td>0.48</td><td>0.35</td><td>0.60</td><td>0.31</td><td>0.65</td><td>180</td><td>186</td><td>0.30</td><td>0.46</td><td>1</td><td>45023</td></tr>
+</tbody></table>
+</div></details>
+</figure>
+
+<figure class="chart card" id="fig-map">
+<h3>Estimates exist for 307 counties; gray counties have no estimate</h3>
+<img src="figures/figure2_county_map.svg" alt="Map of Alabama, Georgia, Louisiana, Mississippi, North Carolina and South Carolina with counties shaded by the size of the pooled gap in five classes">
+<figcaption><b>Figure 2.</b> Counties shaded by the pooled gap in quintiles. Gray counties have no estimate: 163 had no district with at least 50 Black test takers in some grade, and 48 met that rule but had no district with 50 White test takers in any grade; no value is shown for them. Boundaries: Census Bureau cartographic boundary file, 2018. Source: this pipeline.</figcaption>
+</figure>
+
+<h2 class="chap" id="context"><small>Chapter 3</small>Gaps and the conditions around them</h2>
+<div class="prose">
+<p>Racial achievement gaps are closely associated with racial differences in family resources, in the poverty of the schools students attend and in segregation (Reardon, Kalogrides and Shores 2019); income gaps show the same pattern (Reardon 2011). Two county characteristics available for every county are used here to place the gaps in context: the child poverty rate of the county, from the Census Bureau's small area estimates, and the structure of its school districts.</p>
+<p>Across these counties the child poverty rate is at most weakly associated with the size of the gap. The slope of the gap on the poverty rate is -0.41 standard deviations per unit of the rate (robust standard error 0.23), distinguishable from zero only at the 10% level; across the observed range of poverty rates the fitted line in Figure 3 falls by about 0.20 standard deviations, and the rate accounts for   2% of the precision-weighted variation in county gaps. Counties with high child poverty rates have gaps as large or as small as counties with low rates. The structure of districts is more closely associated with the gap. Counties with more school districts have larger gaps: 0.10 standard deviations per log unit (standard error 0.02), or about 0.07 for a doubling of the number of districts, with poverty, the Black share of enrollment and the unevenness of that share across districts held constant. Together the four characteristics account for  25% of the variation in county gaps.</p>
+<p>The count of districts admits more than one reading, and these data do not distinguish between them. In these states a county with several districts may be a county system beside one or more city systems, or, in North Carolina and Louisiana especially, a county whose charter schools are each counted as a district in the federal directory; the count therefore mixes institutional fragmentation with metropolitan size. Larger racial segregation between schools is associated with larger gaps (Reardon 2016; Reardon, Weathers, Fahle, Jang and Kalogrides 2024), but these data cannot say whether the larger gaps of metropolitan counties reflect more advantaged White students, more segregated schools, or both. The measure of how unevenly Black students are spread across a county's districts adds nothing once the number of districts is in the model, and it is zero by construction in the 144 single-district counties, where sorting happens between schools inside the district and is invisible in a district-level file.</p>
+</div>
+
+<figure class="chart card" id="fig-poverty">
+<h3>Child poverty is at most weakly associated with the size of the gap across these counties</h3>
+<img src="figures/figure3_gap_poverty.svg" alt="Scatter plot of the pooled gap against the county child poverty rate, with marker area proportional to precision and a nearly flat weighted fitted line">
+<figcaption><b>Figure 3.</b> Pooled White-Black gap against the SAIPE child poverty rate (ages 5 to 17), one circle per county, circle area proportional to the precision of the estimate, colors by state. The line is the precision-weighted fit; its slope is distinguishable from zero only at the 10% level. Source: this pipeline; SAIPE via the Education Data Portal.</figcaption>
+<details class="tbl"><summary>Show the regression table</summary><div class="scroller">
+<table border="0" width="*">
+<caption>Table 2. Regression of the pooled White-Black gap on county characteristics</caption>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>                    </td><td>         (1)              </td><td>         (2)              </td><td>         (3)              </td><td>         (4)              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>Child poverty rate (SAIPE, ages 5 to 17)</td><td>      -0.406<sup>*</sup>  </td><td>      -0.083              </td><td>      -0.328              </td><td>      -0.308              </td></tr>
+<tr><td>                    </td><td>     (0.228)              </td><td>     (0.183)              </td><td>     (0.265)              </td><td>     (0.282)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Log number of districts</td><td>                          </td><td>       0.102<sup>***</sup></td><td>       0.095<sup>***</sup></td><td>       0.100<sup>***</sup></td></tr>
+<tr><td>                    </td><td>                          </td><td>     (0.022)              </td><td>     (0.020)              </td><td>     (0.020)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Black share of enrollment</td><td>                          </td><td>                          </td><td>       0.205              </td><td>       0.208              </td></tr>
+<tr><td>                    </td><td>                          </td><td>                          </td><td>     (0.147)              </td><td>     (0.144)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Between-district dispersion of Black share</td><td>                          </td><td>                          </td><td>                          </td><td>      -0.056              </td></tr>
+<tr><td>                    </td><td>                          </td><td>                          </td><td>                          </td><td>     (0.192)              </td></tr>
+<tr><td colspan=5>&nbsp;</td></tr>
+<tr><td>Constant            </td><td>       0.932<sup>***</sup></td><td>       0.752<sup>***</sup></td><td>       0.734<sup>***</sup></td><td>       0.731<sup>***</sup></td></tr>
+<tr><td>                    </td><td>     (0.064)              </td><td>     (0.051)              </td><td>     (0.054)              </td><td>     (0.052)              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td>Counties            </td><td>         307              </td><td>         307              </td><td>         307              </td><td>         307              </td></tr>
+<tr><td>Adjusted R-squared  </td><td>       0.019              </td><td>       0.232              </td><td>       0.244              </td><td>       0.242              </td></tr>
+<tr><td colspan=5><hr></td></tr>
+<tr><td colspan=5>
+Weighted by the precision of the pooled gap. Robust standard errors in parentheses.
+</td></tr>
+</table>
+</div></details>
+</figure>
+
+<h2 class="chap" id="validation"><small>Chapter 4</small>How the estimates are checked</h2>
+<div class="prose">
+<p>The Stanford Education Data Archive (SEDA) estimates county means and gaps from the same federal collection, with the full set of performance categories, a different model specification and a link to the national NAEP scale. Its sixth release covers school year 2018-19 and provides an independent set of estimates against which this pipeline's can be judged. Levels cannot be compared: SEDA's scale is national, while this pipeline's gaps are in within-county standard deviation units and its validation means are standardized within each state and grade. Within a state and grade, however, SEDA's values are a linear transformation of the state-standardized ones, so the ordering of counties and the linear association can be compared, through correlations computed within states.</p>
+<p>For county means of all students the correlation is 0.97 (Pearson) and 0.98 (Spearman) over 1,056 county-grade cells. For the White-Black gap, which is a difference of two noisier quantities, the correlation is 0.80 and 0.81 over   888 cells, and 0.87 for the pooled county gaps against SEDA's grade-averaged gaps over 306 counties. A second check is internal: the gap can be computed directly as the difference between the probits of the two groups' proficiency rates, with a standard error from the binomial variance of each rate. The two estimates agree to a correlation of 0.9987, but the binomial standard error is 1.30 times the HETOP standard error at the median, because the model's standard errors treat the reconstructed categories as observed. Both intervals are reported.</p>
+</div>
+
+<figure class="chart card" id="fig-seda">
+<h3>County means agree closely with SEDA; gaps agree less closely, as differences of noisy quantities do</h3>
+<img src="figures/figure4_seda_validation.png" alt="Two scatter plots of pipeline estimates against SEDA estimates, standardized within state and grade: county means on the left, White-Black gaps on the right">
+<figcaption><b>Figure 4.</b> Pipeline estimates against SEDA 6.0 estimates for the same counties, grades and school year, both standardized within state and grade so that scale differences drop out; colors identify states as in Figure 1. Left: county means for all students. Right: White-Black gaps. Source: this pipeline; Stanford Education Data Archive, version 6.0.</figcaption>
+<details class="tbl"><summary>Show the correlations by state</summary><div class="scroller">
+<table class="dt">
+<thead><tr><th>Measure</th><th>State</th><th>County-grade cells</th><th>Pearson</th><th>Spearman</th></tr></thead>
+<tbody>
+<tr><td>County mean, all students</td><td>All states</td><td>1056</td><td>0.971</td><td>0.979</td></tr>
+<tr><td>County mean, all students</td><td>Alabama</td><td>135</td><td>0.979</td><td>0.984</td></tr>
+<tr><td>County mean, all students</td><td>Georgia</td><td>252</td><td>0.970</td><td>0.978</td></tr>
+<tr><td>County mean, all students</td><td>Louisiana</td><td>167</td><td>0.981</td><td>0.980</td></tr>
+<tr><td>County mean, all students</td><td>Mississippi</td><td>181</td><td>0.974</td><td>0.981</td></tr>
+<tr><td>County mean, all students</td><td>North Carolina</td><td>189</td><td>0.958</td><td>0.971</td></tr>
+<tr><td>County mean, all students</td><td>South Carolina</td><td>132</td><td>0.965</td><td>0.973</td></tr>
+<tr><td>County mean, White students</td><td>All states</td><td>891</td><td>0.930</td><td>0.940</td></tr>
+<tr><td>County mean, White students</td><td>Alabama</td><td>105</td><td>0.877</td><td>0.890</td></tr>
+<tr><td>County mean, White students</td><td>Georgia</td><td>227</td><td>0.970</td><td>0.972</td></tr>
+<tr><td>County mean, White students</td><td>Louisiana</td><td>151</td><td>0.844</td><td>0.872</td></tr>
+<tr><td>County mean, White students</td><td>Mississippi</td><td>121</td><td>0.950</td><td>0.954</td></tr>
+<tr><td>County mean, White students</td><td>North Carolina</td><td>174</td><td>0.960</td><td>0.965</td></tr>
+<tr><td>County mean, White students</td><td>South Carolina</td><td>113</td><td>0.943</td><td>0.937</td></tr>
+<tr><td>County mean, Black students</td><td>All states</td><td>1049</td><td>0.896</td><td>0.912</td></tr>
+<tr><td>County mean, Black students</td><td>Alabama</td><td>131</td><td>0.882</td><td>0.901</td></tr>
+<tr><td>County mean, Black students</td><td>Georgia</td><td>252</td><td>0.914</td><td>0.916</td></tr>
+<tr><td>County mean, Black students</td><td>Louisiana</td><td>165</td><td>0.967</td><td>0.961</td></tr>
+<tr><td>County mean, Black students</td><td>Mississippi</td><td>180</td><td>0.945</td><td>0.948</td></tr>
+<tr><td>County mean, Black students</td><td>North Carolina</td><td>189</td><td>0.775</td><td>0.821</td></tr>
+<tr><td>County mean, Black students</td><td>South Carolina</td><td>132</td><td>0.893</td><td>0.901</td></tr>
+<tr><td>White-Black gap</td><td>All states</td><td>888</td><td>0.796</td><td>0.807</td></tr>
+<tr><td>White-Black gap</td><td>Alabama</td><td>105</td><td>0.769</td><td>0.735</td></tr>
+<tr><td>White-Black gap</td><td>Georgia</td><td>227</td><td>0.868</td><td>0.849</td></tr>
+<tr><td>White-Black gap</td><td>Louisiana</td><td>149</td><td>0.737</td><td>0.802</td></tr>
+<tr><td>White-Black gap</td><td>Mississippi</td><td>120</td><td>0.824</td><td>0.833</td></tr>
+<tr><td>White-Black gap</td><td>North Carolina</td><td>174</td><td>0.750</td><td>0.773</td></tr>
+<tr><td>White-Black gap</td><td>South Carolina</td><td>113</td><td>0.796</td><td>0.778</td></tr>
+</tbody></table>
+</div></details>
+</figure>
+
+<h2 class="chap" id="supports"><small>Chapter 5</small>What the evidence supports, and what it does not</h2>
+<div class="prose">
+<ul>
+<li>In school year 2018-19, the average mathematics score of White students exceeded that of Black students in every one of the 307 counties, by 0.44 to 1.47 standard deviations, with a pooled estimate of 0.77.</li>
+<li>The size of the gap varies across counties far more than the uncertainty of any single estimate: the typical 95% interval is 0.23 standard deviations wide, while the spread between the 10th and 90th percentile county is 0.37.</li>
+<li>Within these states the county poverty rate is at most weakly associated with the size of the gap; the number of school districts is more closely associated with it. Both associations are descriptive and admit more than one reading.</li>
+<li>The estimates order counties the way SEDA does, with correlations near 0.97 for means and 0.80 for gaps.</li>
+</ul>
+<p>The sample is the counties with a district of at least 50 Black test takers in every grade, in six states where most districts are county systems (144 of the 307 counties have a single district). It excludes the 163 counties with no district of that size in some grade, and the 48 sample counties with no White cell of that size have no gap estimate; the pattern of association may differ in states with fragmented district systems. The estimates rest on one proficiency cut per group and on the stated assumptions about the shape of the score distribution; the HETOP intervals shown are narrower than the information in the published rates warrants, and the pooled intervals do not carry the variation of a county's gap across grades. Nothing on this page identifies a cause: the gaps are differences in measured achievement between groups of children schooled under different conditions, not differences in the children.</p>
+</div>
+
+<div class="pull">The published record is coarse. Read with an appropriate model and checked against an independent set of estimates, it places every county on one scale, and in each of the 307 counties the difference in measured mathematics achievement between White and Black students is large.</div>
+
+<h2 class="chap" id="methods"><small>About this page</small>Data, methods and protection</h2>
+<div class="methods">
+<h3>Methods in brief</h3>
+<dl>
+<dt>Data</dt><dd>EDFacts mathematics assessment results by district, grade and race (students tested and the midpoint of the published proficiency range), the Common Core of Data district directory and enrollment by race, and the Census Bureau's Small Area Income and Poverty Estimates for school districts, all for school year 2018-19 and all retrieved from the Urban Institute Education Data Portal with the <code>educationdata</code> Stata package. The download took 14.8 minutes.</dd>
+<dt>Sample</dt><dd>District-grade-subgroup cells with fewer than 50 tested students are excluded before aggregation (5.4% of Black test takers); cells suppressed by the Department of Education (601 rows, all small) are dropped and never reconstructed. A county enters when it has a Black cell of at least 50 tested students in every grade: 355 counties, of which 307 have a White cell of that size in at least one grade, and so a gap estimate, and 293 in all three grades.</dd>
+<dt>Estimation</dt><dd>Heteroskedastic ordered probit (Reardon, Shear, Castellano and Ho 2017) with the <code>hetop</code> command, one fit per county and grade with three groups (all students, White, Black) and four categories reconstructed from the proficiency rate; 1,065 county-grade cells in  59 seconds. Gap V (Ho 2009) and its delta-method standard error for every cell in one Mata operation; the companion command <code>gapci</code> does the same for one pair of groups.</dd>
+<dt>Pooling and models</dt><dd>Grade gaps pooled per county with a precision-weighted random-intercept model (Hedges and Vevea 1998), evaluated at grade 6. Four nested precision-weighted regressions of the pooled gap on child poverty, log number of districts, Black share of enrollment and between-district dispersion of that share, with robust standard errors.</dd>
+<dt>Validation</dt><dd>Within-state HETOP refit across counties for each state, grade and group, correlated with SEDA 6.0 county means and White-Black gaps (cohort-standardized scale) after standardization within state and grade; and the direct probit-difference estimator with binomial standard errors as an internal check.</dd>
+<dt>Protection</dt><dd>All sources are public and aggregated. Suppressed cells are never filled in or recovered by subtraction; no estimate on this page or in the tables rests on a cell with fewer than 50 tested students; subgroup estimates appear at the county level only; the raw downloads and the SEDA file are not redistributed, and the validation figure is published as an image without the underlying values. The repository's README and manual state these rules and account for every excluded cell.</dd>
+<dt>Sources behind the figures</dt><dd>U.S. Department of Education, EDFacts; National Center for Education Statistics, Common Core of Data; U.S. Census Bureau, SAIPE; all via the Education Data Portal (Urban Institute), under the ODC Attribution License. Reardon, Ho, Shear, Fahle, saliba and Kalogrides (2025), Stanford Education Data Archive, version 6.0. Census Bureau cartographic boundary files, 2018.</dd>
+</dl>
+</div>
+
+<div class="methods">
+<h3>Materials</h3>
+<div class="files">
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps"><code>county-achievement-gaps</code></a><div>The repository: Stata and Mata code, derived county files, tables, figures and logs</div></div>
+<div class="f"><a href="replication.html"><code>replication.html</code></a><div>Replication manual, generated from the same run, step by step</div></div>
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps/blob/main/run_all.do"><code>run_all.do</code></a><div>Scope and paths; two globals move the analysis to other states or years</div></div>
+<div class="f"><a href="https://github.com/felipehrv/county-achievement-gaps/blob/main/code/ado/gapci.ado"><code>gapci.ado</code></a><div>The companion command: V and its interval from HETOP estimates</div></div>
+</div>
+</div>
+
+<div class="cite">To cite this page: Rodríguez Villalta, F. H. (2026). County achievement gaps recovered from proficiency counts: White-Black mathematics gaps in six Southern states, 2018-19. Brief of the research, github.com/felipehrv/county-achievement-gaps.</div>
+
+<div class="prose" style="font-family:var(--sans); font-size:.86rem; color:var(--muted)">
+<p>References. Hedges, L. V., and J. L. Vevea (1998), Psychological Methods 3(4). Ho, A. D. (2008), Educational Researcher 37(6). Ho, A. D. (2009), Journal of Educational and Behavioral Statistics 34(2). Ho, A. D., and S. F. Reardon (2012), Journal of Educational and Behavioral Statistics 37(4). Reardon, S. F. (2011), in Duncan and Murnane, eds., Whither Opportunity? Reardon, S. F. (2016), RSF 2(5). Reardon, S. F., D. Kalogrides and K. Shores (2019), American Journal of Sociology 124(4). Reardon, S. F., B. R. Shear, K. E. Castellano and A. D. Ho (2017), Journal of Educational and Behavioral Statistics 42(1). Reardon, S. F., E. S. Weathers, E. M. Fahle, H. Jang and D. Kalogrides (2024), American Sociological Review 89(6). Full references with identifiers are in the repository README.</p>
+</div>
+
+</main>
+
+<footer><div class="wrap">Felipe Hernán Rodríguez Villalta · 2026 · Every number on this page is a county aggregate of cells with at least 50 tested students. No suppressed cell is reported or reconstructed, and the raw files and the SEDA data are not redistributed.</div></footer>
+</body>
+</html>

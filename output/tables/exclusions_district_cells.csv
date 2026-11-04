@@ -1,0 +1,55 @@
+fips,subgroup,excl_reason,rows,students
+Alabama,All students,Kept,402,169348
+Alabama,All students,Fewer than 50 tested,12,443
+Alabama,White,Kept,325,89696
+Alabama,White,Suppressed by EDFacts,33,87
+Alabama,White,Fewer than 50 tested,45,1298
+Alabama,Black,Kept,218,50816
+Alabama,Black,Suppressed by EDFacts,28,83
+Alabama,Black,Fewer than 50 tested,164,3956
+Georgia,All students,Kept,536,398728
+Georgia,All students,Fewer than 50 tested,71,2163
+Georgia,White,Kept,438,148936
+Georgia,White,Suppressed by EDFacts,51,116
+Georgia,White,Fewer than 50 tested,100,3179
+Georgia,Black,Kept,318,141978
+Georgia,Black,Suppressed by EDFacts,44,105
+Georgia,Black,Fewer than 50 tested,230,6103
+Louisiana,All students,Kept,384,159154
+Louisiana,All students,Suppressed by EDFacts,9,30
+Louisiana,All students,Fewer than 50 tested,76,2172
+Louisiana,White,Kept,200,69116
+Louisiana,White,Suppressed by EDFacts,91,199
+Louisiana,White,Not reported or not applicable,1,
+Louisiana,White,Fewer than 50 tested,71,1685
+Louisiana,Black,Kept,317,66380
+Louisiana,Black,Suppressed by EDFacts,23,70
+Louisiana,Black,Fewer than 50 tested,126,3449
+Mississippi,All students,Kept,406,110213
+Mississippi,All students,Suppressed by EDFacts,3,11
+Mississippi,All students,Not reported or not applicable,16,0
+Mississippi,All students,Fewer than 50 tested,19,664
+Mississippi,White,Kept,243,45926
+Mississippi,White,Suppressed by EDFacts,73,172
+Mississippi,White,Fewer than 50 tested,84,2102
+Mississippi,Black,Kept,297,50260
+Mississippi,Black,Suppressed by EDFacts,9,37
+Mississippi,Black,Fewer than 50 tested,122,3520
+North Carolina,All students,Kept,599,355534
+North Carolina,All students,Suppressed by EDFacts,5,14
+North Carolina,All students,Fewer than 50 tested,206,5874
+North Carolina,White,Kept,427,162077
+North Carolina,White,Suppressed by EDFacts,66,160
+North Carolina,White,Fewer than 50 tested,257,6762
+North Carolina,Black,Kept,255,83822
+North Carolina,Black,Suppressed by EDFacts,145,373
+North Carolina,Black,Fewer than 50 tested,347,6758
+South Carolina,All students,Kept,241,179996
+South Carolina,All students,Suppressed by EDFacts,1,
+South Carolina,All students,Fewer than 50 tested,12,453
+South Carolina,White,Kept,198,89078
+South Carolina,White,Suppressed by EDFacts,17,50
+South Carolina,White,Fewer than 50 tested,36,828
+South Carolina,Black,Kept,189,57898
+South Carolina,Black,Suppressed by EDFacts,3,10
+South Carolina,Black,Fewer than 50 tested,62,2061

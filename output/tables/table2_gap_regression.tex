@@ -1,0 +1,27 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Regression of the pooled White-Black gap on county characteristics}
+\begin{tabular}{l*{4}{c}}
+\toprule
+                    &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+\midrule
+Child poverty rate (SAIPE, ages 5 to 17)&      -0.406\sym{*}  &      -0.083         &      -0.328         &      -0.308         \\
+                    &     (0.228)         &     (0.183)         &     (0.265)         &     (0.282)         \\
+\addlinespace
+Log number of districts&                     &       0.102\sym{***}&       0.095\sym{***}&       0.100\sym{***}\\
+                    &                     &     (0.022)         &     (0.020)         &     (0.020)         \\
+\addlinespace
+Black share of enrollment&                     &                     &       0.205         &       0.208         \\
+                    &                     &                     &     (0.147)         &     (0.144)         \\
+\addlinespace
+Between-district dispersion of Black share&                     &                     &                     &      -0.056         \\
+                    &                     &                     &                     &     (0.192)         \\
+\addlinespace
+Constant            &       0.932\sym{***}&       0.752\sym{***}&       0.734\sym{***}&       0.731\sym{***}\\
+                    &     (0.064)         &     (0.051)         &     (0.054)         &     (0.052)         \\
+\midrule
+Counties            &         307         &         307         &         307         &         307         \\
+Adjusted R-squared  &       0.019         &       0.232         &       0.244         &       0.242         \\
+\bottomrule
+\end{tabular}
+\end{table}

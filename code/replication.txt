@@ -1,0 +1,426 @@
+<<dd_version: 2>>
+<<dd_include: code/doc_header.html>>
+<title>Replication manual: county achievement gaps</title>
+</head>
+<body class="manual">
+<div class="wrap">
+
+<<dd_do: quietly>>
+/*------------------------------------------------------------------------------
+    replication.txt
+    Source of the replication manual (dyndoc). The text describes each step
+    of the pipeline; every number, table and figure is read from the files
+    the pipeline wrote, so the manual always describes the run that produced it.
+
+    Inputs       : output/tables (runtimes.csv and the summary tables),
+                   data/derived (county-level files), docs/figures
+    Outputs      : docs/replication.html (written by run_all.do)
+    Dependencies : Stata 17 or later with dyndoc; the pipeline must have run
+    Author       : Felipe Hernán Rodríguez Villalta
+    Year         : 2026
+------------------------------------------------------------------------------*/
+
+* Runtimes and summary statistics into globals
+foreach g in 01_download 02_build_master 03_estimate_gaps 04_validate_seda        ///
+             05_figures_tables 01_edfacts 01_ccd_directory 01_ccd_enrollment      ///
+             01_saipe 03_hetop_fits 03_hetop_cells 04_seda_download               ///
+             04_within_state_hetop 04_within_state_fits {
+    global M_t_`g' .
+}
+capture confirm file "${tables}/runtimes.csv"
+if !_rc {
+    import delimited using "${tables}/runtimes.csv", clear varnames(1) encoding(utf-8) stringcols(1)
+    forvalues i = 1/`=_N' {
+        global M_t_`=step[`i']' = seconds[`i']
+    }
+}
+global M_t_steps = 0
+foreach g in 01_download 02_build_master 03_estimate_gaps 04_validate_seda 05_figures_tables {
+    if ${M_t_`g'} < . global M_t_steps = ${M_t_steps} + ${M_t_`g'}
+}
+
+* Global names are limited to 32 characters, hence the short prefixes
+local pfx_se_comparison  "sec"
+local pfx_pooling_summary "pool"
+foreach f in se_comparison pooling_summary {
+    capture confirm file "${tables}/`f'.csv"
+    if !_rc {
+        import delimited using "${tables}/`f'.csv", clear varnames(1) encoding(utf-8) stringcols(1)
+        forvalues i = 1/`=_N' {
+            global M_`pfx_`f''_`=statistic[`i']' = value[`i']
+        }
+    }
+}
+
+* Sample counts from the derived files
+use "${derived}/proficiency_counts.dta", clear
+global M_cells_prof = _N
+quietly levelsof county_fips, local(cl)
+global M_counties_prof : word count `cl'
+quietly bysort county_fips: egen byte _allc = min(cell_complete)
+quietly bysort county_fips: keep if _n == 1
+quietly count if _allc == 1
+global M_counties_complete = r(N)
+
+use "${derived}/gaps_cell_level.dta", clear
+global M_cells_gap = _N
+use "${derived}/gaps_county_level.dta", clear
+global M_counties_pooled = _N
+quietly summarize gap_wb_pooled [aweight = prec_county]
+global M_gap_wmean = r(mean)
+quietly summarize gap_wb_pooled, detail
+global M_gap_p10 = r(p10)
+global M_gap_p50 = r(p50)
+global M_gap_p90 = r(p90)
+global M_gap_min = r(min)
+global M_gap_max = r(max)
+quietly summarize gap_wb_pooled_se
+global M_se_mean = r(mean)
+quietly summarize gap_wb_pooled_se_direct
+global M_se_direct_mean = r(mean)
+
+* Exclusions: Black students excluded by the size rule, all states
+use "${tables}/exclusions_district_cells.dta", clear
+quietly summarize students if subgroup == 3 & excl_reason == 0
+global M_black_kept = r(sum)
+quietly summarize students if subgroup == 3 & excl_reason == 3
+global M_black_small = r(sum)
+global M_black_small_share = ${M_black_small} / (${M_black_kept} + ${M_black_small})
+quietly summarize rows if excl_reason == 1
+global M_rows_suppressed = r(sum)
+quietly summarize students if excl_reason == 1
+global M_students_suppressed = r(sum)
+quietly summarize rows if excl_reason == 2
+global M_rows_notreported = r(sum)
+quietly summarize rows if excl_reason == 3
+global M_rows_small = r(sum)
+quietly summarize rows if excl_reason == 0
+global M_rows_kept = r(sum)
+
+* Raw row counts
+foreach f in edfacts_district_race ccd_directory ccd_enrollment_race saipe_district {
+    global M_raw_`f' .
+    capture confirm file "${raw}/`f'.dta"
+    if !_rc {
+        quietly describe using "${raw}/`f'.dta"
+        global M_raw_`f' = r(N)
+    }
+}
+
+* SEDA validation
+global M_seda_r_mean .
+global M_seda_rho_mean .
+global M_seda_n_mean .
+global M_seda_r_gap .
+global M_seda_rho_gap .
+global M_seda_n_gap .
+global M_seda_r_pooled .
+global M_seda_rho_pooled .
+global M_seda_n_pooled .
+capture confirm file "${tables}/seda_validation_correlations.csv"
+if !_rc {
+    import delimited using "${tables}/seda_validation_correlations.csv", clear varnames(1) encoding(utf-8) stringcols(1 3)
+    quietly keep if state == "All states"
+    forvalues i = 1/`=_N' {
+        if measure[`i'] == "mean_all" {
+            global M_seda_r_mean = pearson[`i']
+            global M_seda_rho_mean = spearman[`i']
+            global M_seda_n_mean = cells[`i']
+        }
+        if measure[`i'] == "gap" {
+            global M_seda_r_gap = pearson[`i']
+            global M_seda_rho_gap = spearman[`i']
+            global M_seda_n_gap = cells[`i']
+        }
+        if measure[`i'] == "gap_pooled_county" {
+            global M_seda_r_pooled = pearson[`i']
+            global M_seda_rho_pooled = spearman[`i']
+            global M_seda_n_pooled = cells[`i']
+        }
+    }
+}
+local sy1 = ${EDF_YEAR}
+local sy2 = ${EDF_YEAR} + 1
+global M_school_year "`sy1'-`=substr("`sy2'", 3, 2)'"
+global M_seda_year = ${EDF_YEAR} + 1
+global M_n_states : word count ${STATES}
+global M_n_grades : word count ${GRADES}
+use "${derived}/hetop_estimates.dta", clear
+quietly egen byte _tag = tag(cell_id)
+quietly count if _tag
+global M_cells_hetop = r(N)
+
+* Sentences that depend on timings recorded for the steps
+global M_s_hetop "The `: display %5.0fc ${M_cells_hetop}' county-grade cells were fit; the time is recorded in output/tables/runtimes.csv when step 03 runs."
+if ${M_t_03_hetop_fits} < . global M_s_hetop "`: display %5.0fc ${M_cells_hetop}' cells fit in `: display %6.1f ${M_t_03_hetop_fits}' seconds, about `: display %5.2f ${M_t_03_hetop_fits} / ${M_cells_hetop}' seconds per cell."
+global M_s_seda "The download and fit times are recorded in output/tables/runtimes.csv when step 04 runs."
+if ${M_t_04_seda_download} < . & ${M_t_04_within_state_hetop} < . global M_s_seda "The download of about 178 MB took `: display %6.1f ${M_t_04_seda_download}' seconds in this run (0 means the file was reused), and the `: display ${M_t_04_within_state_fits}' within-state HETOP fits took `: display %6.1f ${M_t_04_within_state_hetop}' seconds."
+<</dd_do>>
+
+<header class="mast">
+<div class="kicker">Replication manual · County achievement gaps</div>
+<h1>Replicating and extending the county achievement gap pipeline</h1>
+<p class="deck">A step-by-step guide for an analyst who has to repeat the estimates or move them to other states and years. Each step says what it does, which command runs it, what the output should look like, and what to do when it fails.</p>
+<div class="byline">Felipe Hernán Rodríguez Villalta · Stata and Mata · Numbers in this document are read from the run that generated it</div>
+</header>
+
+<div class="box">
+<h4>How this document is built</h4>
+<p>This page is produced by <code>dyndoc</code> from <code>code/replication.txt</code> at the end of every run of <code>run_all.do</code>. The counts, times and tables below are read from the files the pipeline wrote, so the manual cannot drift away from the code. The run described here covers school year <<dd_display: "${M_school_year}">> in <<dd_display: ${M_n_states}>> states (FIPS <<dd_display: "${STATES}">>), grades <<dd_display: "${GRADES}">>.</p>
+</div>
+
+## 1. Environment and dependencies
+
+**What it does.** Sets the scope, the paths and the dependencies for the whole pipeline. Everything is controlled from `run_all.do`, which runs from the repository root.
+
+**Requirements.** Stata 17 or later (this run used Stata <<dd_display: c(stata_version)>> <<dd_display: c(edition)>>). Three community packages from SSC: `educationdata` (the client for the Urban Institute Education Data Portal, which installs `libjson` on first use), `hetop` (the heteroskedastic ordered probit estimator of Shear and Reardon) and `estout`. `run_all.do` installs any of them that is missing. The companion command `gapci` and its help file ship in `code/ado` and are added to the ado path by `run_all.do`. The map uses `grmap` and `spshape2dta`, which are part of Stata since version 15.
+
+**The two scope globals.** The first lines of `run_all.do` define what is estimated:
+
+```
+global STATES "01 13 22 28 37 45"
+global EDF_YEAR 2018
+```
+
+`STATES` lists state FIPS codes. `EDF_YEAR` is the school year coded as the portal codes it, by the calendar year in which the year begins: 2018 means 2018-19. Other parameters follow: `GRADES`, `MIN_CELL_N` (the cell-size threshold), `MAKE_MAP`, `SEDA_ACCEPT_DUA` (see step 6), `REUSE_RAW` and `RUN_STEPS`. The full list in `RUN_STEPS` (`"01 02 03 04 05 docs"`) runs the whole pipeline and builds the documents; the documents are generated only when `docs` is listed.
+
+**The command.** From the repository root, in batch:
+
+```
+/Applications/Stata/StataBE.app/Contents/MacOS/StataBE -e do run_all.do      (macOS)
+stata-mp -b do run_all.do                                                     (Linux or Unix)
+```
+
+or interactively after `cd` to the root: `do run_all.do`.
+
+**What to expect.** Five step logs and a master log in `output/logs`, the county-level files in `data/derived`, tables and figures in `output`, and the two documents in `docs`. In the run that produced this page the steps took <<dd_display: %5.1f ${M_t_steps}/60>> minutes in total: download <<dd_display: %5.1f ${M_t_01_download}/60>>, build <<dd_display: %4.1f ${M_t_02_build_master}/60>>, estimation <<dd_display: %4.1f ${M_t_03_estimate_gaps}/60>>, validation <<dd_display: %4.1f ${M_t_04_validate_seda}/60>>, figures and tables <<dd_display: %4.1f ${M_t_05_figures_tables}/60>> (a dot marks a step that did not run in that session).
+
+**If it fails.** `run_all.do must be run from the repository root` means the working directory is wrong. A failed `ssc install` means no internet connection or an SSC outage; install the package later and run again. On the machine used here, Stata in batch mode returned exit code 0 even after an error, so do not rely on the exit status: read the log, where an error shows as a line `r(#);` near the end.
+
+## 2. Download (code/01_download.do)
+
+**What it does.** Downloads four district-level sources from the Urban Institute Education Data Portal, one request per state (and per grade for EDFacts), and saves the variables the pipeline uses, with their values unchanged, in `data/raw`, which git ignores. A scope stamp (states, year, grades) is written next to the files; with `REUSE_RAW` set to 1 the files are reused only if the stamp matches the current scope.
+
+| Source | Portal endpoint | What it contributes |
+|---|---|---|
+| EDFacts | `school-districts/edfacts/assessments/{year}/grade-{g}/race/` | students tested and percent at or above proficient in mathematics, by district, grade and race |
+| CCD directory | `school-districts/ccd/directory/{year}/` | county code and total enrollment of every district |
+| CCD enrollment by race | `school-districts/ccd/enrollment/{year}/grade-99/race/` | Black and total enrollment of every district |
+| SAIPE | `school-districts/saipe/{year}/` | child poverty rate (ages 5 to 17) of every district |
+
+**The command.** `do code/01_download.do` through `run_all.do` (set `RUN_STEPS` to `01` to run it alone).
+
+**What to expect.** Rows per source in this run, with the time each download took:
+
+| File in data/raw | Rows | Seconds (most recent run of step 01) |
+|---|---|---|
+| `edfacts_district_race.dta` (district by grade by race) | <<dd_display: %9.0fc ${M_raw_edfacts_district_race}>> | <<dd_display: %6.1f ${M_t_01_edfacts}>> |
+| `ccd_directory.dta` (districts) | <<dd_display: %9.0fc ${M_raw_ccd_directory}>> | <<dd_display: %6.1f ${M_t_01_ccd_directory}>> |
+| `ccd_enrollment_race.dta` (district by race) | <<dd_display: %9.0fc ${M_raw_ccd_enrollment_race}>> | <<dd_display: %6.1f ${M_t_01_ccd_enrollment}>> |
+| `saipe_district.dta` (districts) | <<dd_display: %9.0fc ${M_raw_saipe_district}>> | <<dd_display: %6.1f ${M_t_01_saipe}>> |
+
+The portal keeps the Department of Education's special codes: -1 missing or not reported, -2 not applicable, -3 suppressed. They arrive as numbers; step 3 recodes them to missing in every source and counts them for EDFacts.
+
+**If it fails.** `Server Error (500)` from the EDFacts endpoint means the year is not in the portal: assessment results exist for 2009 to 2018 and for 2020 only. `Unable to open URL` is a transient connection problem; the script retries twice after ten seconds and then stops, so run it again. On the first use `educationdata` installs `libjson` from SSC, which needs a connection.
+
+## 3. Build the county files (code/02_build_master.do)
+
+**What it does.** Recodes the special codes, applies the cell-size rule, assigns districts to counties, aggregates to county by grade by subgroup, reconstructs four ordered categories from the proficiency rate, and builds the county covariates.
+
+**The command.** `do code/02_build_master.do` through `run_all.do`.
+
+**What to expect: suppression and exclusions.** District-grade-subgroup rows leave the sample for three reasons. The table below is the record of what was lost and where, for the three subgroups together.
+
+~~~~
+<<dd_do: nocommands>>
+use "${tables}/exclusions_district_cells.dta", clear
+label define exclr 0 "Kept" 1 "Suppressed by EDFacts" 2 "Not reported or not applicable" 3 "Fewer than ${MIN_CELL_N} tested", replace
+label values excl_reason exclr
+label define subgrp 1 "All students" 2 "White" 3 "Black", replace
+label values subgroup subgrp
+collapse (sum) rows students, by(subgroup excl_reason)
+format students %12.0fc
+format rows %8.0fc
+list subgroup excl_reason rows students, noobs sepby(subgroup) abbreviate(14)
+<</dd_do>>
+~~~~
+
+Suppression by the Department of Education (code -3) removed <<dd_display: %6.0fc ${M_rows_suppressed}>> district rows; where the number tested was reported, those rows held <<dd_display: %6.0fc ${M_students_suppressed}>> students in all. Suppressed cells are small by construction, and the pipeline never fills them in. The student totals in the accounting are sums of the published numbers tested in excluded rows; a total built from fewer than three rows is withheld. The cell-size rule (fewer than <<dd_display: ${MIN_CELL_N}>> tested) removed <<dd_display: %6.0fc ${M_rows_small}>> rows; for Black students it set aside <<dd_display: %7.0fc ${M_black_small}>> of <<dd_display: %9.0fc ${M_black_kept} + ${M_black_small}>> tested students, <<dd_display: %4.1f 100 * ${M_black_small_share}>> percent. By state:
+
+<<dd_include: output/tables/exclusions_summary.html>>
+
+**What to expect: counties.** A county enters when it has a Black cell of at least <<dd_display: ${MIN_CELL_N}>> tested students in every one of the <<dd_display: ${M_n_grades}>> grades; a county with no kept cell in some grade fails the rule. Counties with any kept Black cell and counties meeting the rule, by state:
+
+~~~~
+<<dd_do: nocommands>>
+import delimited using "${tables}/county_eligibility.csv", clear varnames(1) encoding(utf-8)
+label_states fips
+label var fips "State"
+label var counties_with_black_cells "With any kept Black cell"
+label var counties_eligible "Meeting the rule in every grade"
+list, noobs abbreviate(28)
+<</dd_do>>
+~~~~
+
+The proficiency file has <<dd_display: %5.0fc ${M_cells_prof}>> county-grade-subgroup cells in <<dd_display: ${M_counties_prof}>> counties; <<dd_display: ${M_counties_complete}>> counties have all three subgroups in all three grades. The White cell is the one missing in every incomplete cell, in majority-Black counties where fewer than <<dd_display: ${MIN_CELL_N}>> White students were tested in any district.
+
+**What to expect: covariates.** One row per county with the child poverty rate, the Black share of enrollment, the between-district dispersion of the Black share and the log number of districts. The number of counties whose covariates had to be imputed with the sample mean is written to `output/tables/covariate_imputation.csv`; in this run:
+
+~~~~
+<<dd_do: nocommands>>
+import delimited using "${tables}/covariate_imputation.csv", clear varnames(1) encoding(utf-8)
+list, noobs abbreviate(20)
+use "${derived}/county_covariates.dta", clear
+summarize poverty_rate share_black seg_bw_index district_fragmentation n_districts
+<</dd_do>>
+~~~~
+
+**Decisions the code takes, and why.** Every merge uses the numeric value of the district id, because the portal zero-pads the seven-digit `leaid` in some files and not in others; a string merge loses every district in states whose FIPS code starts with zero. Directory records whose county code lies in another state are dropped (one record in this run). The county proficiency rate is the mean of district rates weighted by the number tested; the number tested is the plain sum (`rawsum`), never the weighted sum. The composition and dispersion measures use the districts with a Black share in the enrollment file, and the district count every district. The four ordered categories are reconstructed from the single proficiency cut under the assumption of a normal distribution with unit variance and cut scores at -1, 0 and 1; a rate of exactly 0 or 100 would be bounded at 0.5 and 99.5 percent (none occurs in this scope); see the README for what this implies.
+
+**If it fails.** `variable race not found` or a race label other than `Total`, `White` and `Black` means the portal changed its value labels; check `label list` on the raw file. `merge` reporting zero matches between SAIPE and the directory means the district id arrived in a new format; compare `leaid` in the two raw files.
+
+## 4. HETOP estimation (code/03_estimate_gaps.do, parts 1 and 2)
+
+**What it does.** Fits a heteroskedastic ordered probit model (Reardon, Shear, Castellano and Ho 2017) to every county-grade cell with three groups (all students, White, Black) and four categories, with `hetop` (`numcats(4) identify(sums) gaps minsize(20)`, the same call for every cell), and saves both the identification-metric and the standardized estimates; the gaps use the standardized ones.
+
+**The command.** `do code/03_estimate_gaps.do` through `run_all.do` (`RUN_STEPS` `03`). Parts 3 to 6 of the same script are described in step 5.
+
+**What to expect.** <<dd_display: "${M_s_hetop}">> Convergence by state:
+
+<<dd_include: output/tables/convergence.html>>
+
+Incomplete cells are those where one subgroup is missing after the size rule; they are written out with missing estimates and do not enter the gap computation. Because the categories were reconstructed from one proficiency rate, the standardized SDs sit close to 1:
+
+~~~~
+<<dd_do: nocommands>>
+use "${derived}/hetop_estimates.dta", clear
+summarize sigma_std if converged == 1, detail
+<</dd_do>>
+~~~~
+
+**If it fails.** `hetop` not found: `ssc install hetop`. A cell that fails to converge, or that returns fewer than three groups, is counted and skipped; the failure does not stop the run. Many failures at once usually mean a category column with zero counts everywhere, which happens with very small `MIN_CELL_N`.
+
+## 5. Gaps, gapci, pooling and the regression ladder (code/03_estimate_gaps.do, parts 3 to 6)
+
+**What it does.** Computes the White-Black gap V (Ho 2009) and its delta-method standard error for every cell with the Mata routine `compute_gaps_vec()`; compares V with the direct difference of probits and its binomial standard error; pools the grade-level gaps of each county into one estimate with a precision-weighted random-intercept model (Hedges and Vevea 1998); and estimates the four-model ladder.
+
+**The command.** Same script as step 4.
+
+**What to expect: the companion command.** `gapci` reproduces `compute_gaps_vec()` cell by cell; the script stops if the two disagree beyond numerical precision. Its output for one cell:
+
+~~~~
+<<dd_do: nocommands>>
+use "${derived}/gaps_cell_level.dta", clear
+sort county_fips grade
+gapci, mean1(`=mu_white[1]') se1(`=mu_white_se[1]') sd1(`=sd_white[1]') sdse1(`=sd_white_se[1]') ///
+       mean2(`=mu_black[1]') se2(`=mu_black_se[1]') sd2(`=sd_black[1]') sdse2(`=sd_black_se[1]')
+<</dd_do>>
+~~~~
+
+**What to expect: HETOP against the direct estimator.** Across <<dd_display: %5.0fc ${M_sec_cells}>> cells the correlation between V and the direct probit difference is <<dd_display: %6.4f ${M_sec_correlation_v_direct}>>, with a median absolute difference of <<dd_display: %6.4f ${M_sec_median_abs_diff}>>. The binomial standard error is <<dd_display: %4.2f ${M_sec_se_ratio_p50}>> times the HETOP standard error at the median (10th to 90th percentile <<dd_display: %4.2f ${M_sec_se_ratio_p10}>> to <<dd_display: %4.2f ${M_sec_se_ratio_p90}>>). The HETOP standard errors treat the reconstructed categories as observed; the binomial ones use only the information the published rate carries. Both standard errors are kept in `gaps_county_level.dta`, and the county table reports both 95% intervals.
+
+**What to expect: pooling.** <<dd_display: %5.0fc ${M_pool_cells}>> cell gaps pooled into <<dd_display: ${M_pool_counties}>> county estimates. The model multiplies every term, the county intercept included, by the square root of the cell weight before `mixed` fits it; on the transformed scale the county effect is a random coefficient on that square root. Fixed part: intercept <<dd_display: %6.3f ${M_pool_intercept}>>, grade slope <<dd_display: %7.4f ${M_pool_grade_slope}>> (SE <<dd_display: %6.4f ${M_pool_grade_slope_se}>>); county variance <<dd_display: %6.4f ${M_pool_county_variance}>>; pooled gap at the reference grade <<dd_display: ${M_pool_reference_grade}>>: <<dd_display: %5.3f ${M_pool_grand_gap_grade6}>>. The residual variance of the weighted model is <<dd_display: %5.2f ${M_pool_residual_variance}>>; it would be 1 if the cell standard errors captured all the variation of a county's gap across grades. The pooled standard error is computed from the sum of cell precisions, so it is too small by a factor of about the square root of that variance. The median county gap is <<dd_display: %5.3f ${M_gap_p50}>>, the 10th and 90th percentiles <<dd_display: %5.3f ${M_gap_p10}>> and <<dd_display: %5.3f ${M_gap_p90}>>.
+
+~~~~
+<<dd_do: nocommands>>
+use "${derived}/gaps_county_level.dta", clear
+tabulate fips
+summarize gap_wb_pooled gap_wb_pooled_se gap_wb_pooled_se_direct n_grades
+<</dd_do>>
+~~~~
+
+**What to expect: the ladder.** Table 2 as written by the script:
+
+<<dd_include: output/tables/table2_gap_regression.html>>
+
+The nested test of model 3 against model 4 gives F(1, <<dd_display: %3.0f ${M_pool_nested_F_df}>>) = <<dd_display: %6.3f ${M_pool_nested_F}>>, p = <<dd_display: %5.3f ${M_pool_nested_p}>>. The models describe associations between the county gap and county characteristics; none of them identifies a causal effect.
+
+**If it fails.** `mixed` failing to converge is rare with these data; if it happens, inspect `gaps_cell_level.dta` for cells with a standard error of zero (the script drops them). `gapci and compute_gaps_vec() disagree` points to an edited copy of one of the two routines.
+
+## 6. Validation against SEDA (code/04_validate_seda.do)
+
+**What it does.** Downloads the Stanford Education Data Archive county file (version 6.0, cohort-standardized scale), refits HETOP across the counties of each state and grade so that county means are on a common within-state metric, and correlates the pipeline's means and gaps with SEDA's within states.
+
+**Before running.** SEDA is distributed under a data use agreement: no commercial use, no attempt to identify individuals, no redistribution of the files, acknowledgement of the source. Read it at https://edopportunity.org/opportunity/data/ and set `SEDA_ACCEPT_DUA` to 1 in `run_all.do`. With 0 the pipeline stops before this step and explains why. The file is saved in `data/raw/seda`, which git ignores, and the merged validation file in `data/derived` is ignored too.
+
+**The command.** `do code/04_validate_seda.do` through `run_all.do` (`RUN_STEPS` `04`).
+
+**What to expect.** <<dd_display: "${M_s_seda}">> SEDA codes the school year by its spring, so portal year <<dd_display: ${EDF_YEAR}>> is matched to SEDA year <<dd_display: ${M_seda_year}>>. Correlations within states, with both measures standardized within state and grade before grades are pooled:
+
+<<dd_include: output/tables/seda_correlations.html>>
+
+Across all states the county means for all students correlate at <<dd_display: %5.3f ${M_seda_r_mean}>> (Pearson) and <<dd_display: %5.3f ${M_seda_rho_mean}>> (Spearman) over <<dd_display: %5.0fc ${M_seda_n_mean}>> county-grade cells; the White-Black gaps at <<dd_display: %5.3f ${M_seda_r_gap}>> and <<dd_display: %5.3f ${M_seda_rho_gap}>> over <<dd_display: %5.0fc ${M_seda_n_gap}>> cells. The pooled county gaps against SEDA's grade-averaged gaps correlate at <<dd_display: %5.3f ${M_seda_r_pooled}>> (Pearson) and <<dd_display: %5.3f ${M_seda_rho_pooled}>> (Spearman) over <<dd_display: ${M_seda_n_pooled}>> counties.
+
+<figure class="chart card">
+<img src="figures/figure4_seda_validation.png" alt="Scatter plots of pipeline estimates against SEDA estimates, county means and White-Black gaps, with fitted lines">
+<figcaption><b>Figure 4.</b> Pipeline estimates against SEDA 6.0 estimates for the same counties, grades and school year, both standardized within state and grade. Left: county means for all students. Right: White-Black gaps. Colors identify states. Source: this run.</figcaption>
+</figure>
+
+**Why levels are not compared.** SEDA links its estimates to the NAEP scale and reports them in national student-level standard deviation units; this pipeline works from the single proficiency cut in the public files and standardizes within each state, grade and year. Within a state and grade the SEDA scales are affine transformations of the state-standardized mean, so the comparable quantities are the ordering and the linear association of counties, not the levels.
+
+**If it fails.** `copy` failing on the Stanford Digital Repository URL means no connection or a changed file name; the current names are listed at https://edopportunity.org/opportunity/data/downloads/. SEDA 6.0 ends with spring 2019 (school year 2018-19) for every geographic unit; later school years are released separately as the Educational Opportunity Trends Project, with district and state estimates and no county files, so this step has no comparator for them and stops with a message. Set `RUN_STEPS` to `"01 02 03 05 docs"` in that case: step 05 then writes a placeholder in place of the SEDA table, skips Figure 4, and the documents show the validation numbers as missing.
+
+## 7. Figures and tables (code/05_figures_tables.do)
+
+**What it does.** Downloads the Census cartographic boundary file for counties (2018, 1:20,000,000), takes county names from it, draws the four figures and writes the HTML tables used by the brief and this manual.
+
+**The command.** `do code/05_figures_tables.do` through `run_all.do` (`RUN_STEPS` `05`).
+
+**What to expect.** In `output/figures`: `figure1_county_gaps`, `figure2_county_map` and `figure3_gap_poverty` in SVG and PNG, and `figure4_seda_validation` in PNG only (an SVG would carry the standardized SEDA values as coordinates); copies in `docs/figures`. In `output/tables`, written by this step: `county_gaps.csv` and `.html`, `state_summary`, `exclusions_summary`, `seda_correlations.html` and `convergence.html`; the esttab tables and the CSV summaries of steps 3 to 6 are written by those steps. The state summary:
+
+<<dd_include: output/tables/state_summary.html>>
+
+**If it fails.** `grmap not yet activated`: the script runs `grmap, activate`, which writes a marker file into the PERSONAL ado directory; if that directory is not writable, run the command once by hand. If the boundary file cannot be downloaded or unpacked, the script continues: Figure 2 is skipped and county names fall back to FIPS codes. To recover both, place `cb_2018_us_county_20m.zip` in `data/raw/shapes` by hand and run step 05 again. `MAKE_MAP` set to 0 only suppresses the map when the file is present.
+
+## 8. Changing the scope
+
+**What changes.** Edit `STATES` and `EDF_YEAR` in `run_all.do`; nothing else needs to change. Running times scale with the number of states and grades for the download and with the number of county-grade cells for HETOP. From this run:
+
+| Component | Measured | Unit cost |
+|---|---|---|
+| EDFacts download | <<dd_display: %6.1f ${M_t_01_edfacts}>> s for <<dd_display: ${M_n_states}>> states and <<dd_display: ${M_n_grades}>> grades | <<dd_display: %5.1f ${M_t_01_edfacts} / (${M_n_grades} * ${M_n_states})>> s per state-grade request |
+| CCD directory, enrollment and SAIPE | <<dd_display: %6.1f ${M_t_01_ccd_directory} + ${M_t_01_ccd_enrollment} + ${M_t_01_saipe}>> s for <<dd_display: ${M_n_states}>> states | <<dd_display: %5.1f (${M_t_01_ccd_directory} + ${M_t_01_ccd_enrollment} + ${M_t_01_saipe}) / ${M_n_states}>> s per state |
+| HETOP, main pipeline | <<dd_display: %6.1f ${M_t_03_hetop_fits}>> s for <<dd_display: %5.0fc ${M_cells_hetop}>> cells | <<dd_display: %5.2f ${M_t_03_hetop_fits} / ${M_cells_hetop}>> s per cell |
+
+Download time per request depends mostly on the portal's response, not on the size of the state, so a national run of 51 states would need roughly <<dd_display: %4.0f (${M_t_01_edfacts} / (${M_n_grades} * ${M_n_states}) * (51 * ${M_n_grades}) + (${M_t_01_ccd_directory} + ${M_t_01_ccd_enrollment} + ${M_t_01_saipe}) / ${M_n_states} * 51) / 60>> minutes of downloads with the JSON client, and HETOP for about 3,000 counties roughly <<dd_display: %4.0f ${M_t_03_hetop_fits} / ${M_cells_hetop} * 3000 * ${M_n_grades} / 60>> minutes. For a national run the portal's bulk CSV files are the faster route: the EDFacts district assessment and CCD district enrollment files come one per year (about 115 to 155 MB each), the CCD district directory (231 MB) and SAIPE (31 MB) files cover all years; their names are listed by the API at `/api/v1/api-downloads/` and served from `https://educationdata.urban.org/csv/<source>/<file>`, and the `educationdata` command's `csv` option downloads them. `import delimited` from those files and `keep if` on `fips` replaces the request loop in `01_download.do`.
+
+**Other school years.** The portal holds EDFacts district assessments for 2009 to 2018 and for 2020 (school year 2020-21). The 2020-21 data reflect the pandemic: many districts reported nothing, participation was uneven, and a large share of cells is suppressed or not applicable. The pipeline handles the codes -1, -2 and -3 in every year (rows not reported or not applicable, code -2 or no value at all, already occur in 2018-19: <<dd_display: %3.0f ${M_rows_notreported}>> district rows in this run), but the sample of counties shrinks sharply in 2020-21 and no SEDA county file exists for that year, so step 6 cannot run and `RUN_STEPS` must omit `04`. Years before 2018 work as 2018 does; SEDA covers 2009 to 2019 at the county level.
+
+**Other states.** Any set of states works; the figures cycle through a palette of seven colors, so more than seven states share colors. The county boundaries are the 2018 vintage for every year. In states with many small districts (the Midwest and Northeast) the cell-size rule excludes a larger share of students, and SEDA's county file lacks Black and White estimates in grade 8 for several states (Florida, Texas, Tennessee, Virginia among them), so the validation sample is smaller there.
+
+**Other subgroups.** The pipeline is written for the White-Black comparison. Another pair of groups needs new labels in step 3, new variable names in steps 4 and 5, and the matching SEDA columns in step 6.
+
+## 9. Data protection
+
+The sources are public and aggregated, but they describe students from underserved populations, and the pipeline treats them with the care an institutional review board would ask for.
+
+- Cells suppressed by the Department of Education (code -3) are dropped and never imputed or reconstructed, and no table or figure reports a proficiency value for a suppressed cell. Complementary suppression is respected: every published estimate is a county aggregate of districts with at least <<dd_display: ${MIN_CELL_N}>> tested students in the subgroup, and the only numbers that refer to excluded cells are the state-level counts of rows and of students tested in the exclusion accounting, which are sums of published counts and carry no proficiency value.
+- District-grade-subgroup cells with fewer than <<dd_display: ${MIN_CELL_N}>> tested students never enter an aggregate, and a county is published only when its Black cell has at least <<dd_display: ${MIN_CELL_N}>> tested students in every grade. The smallest cell behind any estimate on the brief, in the tables or on the map therefore has at least <<dd_display: ${MIN_CELL_N}>> students; step 3 counts how many students this rule sets aside. Subtracting the White and Black counts of a county cell from its all-students count leaves a residual that mixes students of other race groups with the White and Black students of the district rows that the size rule or suppression excluded; every county count is a sum of district counts that EDFacts publishes, so the subtraction recovers nothing that the public district file does not already give.
+- Subgroup estimates are published at the county level only, never for districts or schools.
+- The raw downloads from the portal, the SEDA file and the boundary file are not versioned (`data/raw` is ignored by git), and the merged validation files that carry SEDA values are ignored too. SEDA is cited and not redistributed, as its data use agreement requires; the validation figure is published as an image, not as a vector file with the values as coordinates.
+- Logs and derived files contain county-level aggregates only. `run_all.do` replaces the repository path and the temporary directory in the logs with placeholders, and zeroes the unused bytes of the name and label fields of every shipped `.dta` file (`scrubdta`, in code/ado), which Stata otherwise fills with fragments of its memory.
+
+## Materials
+
+<div class="methods">
+<h3>Files of the repository</h3>
+<div class="files">
+<div class="f"><code>run_all.do</code><div>Scope, paths, dependencies; runs the steps and builds the documents</div></div>
+<div class="f"><code>code/01_download.do</code><div>Step 2. Download from the Education Data Portal</div></div>
+<div class="f"><code>code/02_build_master.do</code><div>Step 3. County files and exclusion accounting</div></div>
+<div class="f"><code>code/03_estimate_gaps.do</code><div>Steps 4 and 5. HETOP, gaps, pooling, ladder</div></div>
+<div class="f"><code>code/04_validate_seda.do</code><div>Step 6. Validation against SEDA</div></div>
+<div class="f"><code>code/05_figures_tables.do</code><div>Step 7. Figures, map and tables</div></div>
+<div class="f"><code>code/ado/gapci.ado</code><div>The companion command; <code>help gapci</code> for its documentation</div></div>
+<div class="f"><code>code/replication.txt</code><div>Source of this manual (dyndoc)</div></div>
+<div class="f"><code>code/brief.html</code><div>Source of the brief (dyntext)</div></div>
+</div>
+</div>
+
+<div class="cite">To cite this repository: Rodríguez Villalta, F. H. (2026). County achievement gaps: White-Black mathematics gaps from EDFacts proficiency counts with heteroskedastic ordered probit models. Replication manual, github.com/felipehrv/county-achievement-gaps. Data: EDFacts, Common Core of Data and Small Area Income and Poverty Estimates via the Urban Institute Education Data Portal; Stanford Education Data Archive, version 6.0.</div>
+
+<footer>Felipe Hernán Rodríguez Villalta · 2026 · All numbers on this page are county aggregates of cells with at least <<dd_display: ${MIN_CELL_N}>> tested students; no suppressed cell is reported or reconstructed.</footer>
+
+</div>
+</body>
+</html>
